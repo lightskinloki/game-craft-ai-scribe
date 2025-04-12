@@ -504,10 +504,10 @@ export default gameEngine;
    - Displays a performance counter (FPS)
 
 5. **Game Flow Control**:
-   - The `init()` method sets up the game environment
-   - The `start()` method begins the game loop
-   - The `update()` method advances game logic based on elapsed time
-   - The `render()` method draws the current game state
+   - The \`init()\` method sets up the game environment
+   - The \`start()\` method begins the game loop
+   - The \`update()\` method advances game logic based on elapsed time
+   - The \`render()\` method draws the current game state
 
 This code follows good practices for game development:
 - Separation of concerns (update logic vs. rendering)
@@ -516,8 +516,8 @@ This code follows good practices for game development:
 - Event-based input handling
 
 To use this engine, you would:
-1. Create entity classes with `update()` and `render()` methods
-2. Define `createPlayer()` and `createEnemy()` functions
+1. Create entity classes with \`update()\` and \`render()\` methods
+2. Define \`createPlayer()\` and \`createEnemy()\` functions
 3. Set up an HTML canvas with id="gameCanvas"
 4. Initialize and start the engine when the page loads
 
