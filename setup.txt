@@ -1,0 +1,68 @@
+# Game Craft AI Scribe - Setup Instructions
+
+This guide will walk you through the steps to get the Game Craft AI Scribe application running on your local machine and connect it to the Google Gemini API.
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+* **Python 3.7+**: Required for the backend server. You can download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
+* **Node.js and npm**: Required for the frontend application. You can download them from [https://nodejs.org/](https://nodejs.org/).
+* **Git**: Recommended for cloning the repository. You can download it from [https://git-scm.com/downloads](https://git-scm.com/downloads).
+
+## Setup Steps
+
+1.  **Clone the Repository (if you haven't already):**
+    ```bash
+    git clone [your_repository_url]
+    cd [your_repository_name]
+    ```
+
+2.  **Obtain a Gemini API Key:**
+    * Visit the Google AI Studio website: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
+    * Sign in with your Google account.
+    * Click on "Create API Key" to generate a new key.
+    * Copy the API key that appears - you'll need this for the backend.
+
+3.  **Set Up the Backend Environment:**
+    ```bash
+    cd backend
+    # Create a Python virtual environment
+    python -m venv venv
+    # Activate the virtual environment
+    # On Windows:
+    venv\Scripts\activate
+    # On Mac/Linux:
+    source venv/bin/activate
+    # Install the required packages
+    pip install -r requirements.txt
+    # Create the .env file and add your API key
+    cp .env.example .env
+    # Open the .env file and replace 'your_gemini_api_key_here' with your actual API key
+    # Example:
+    # GEMINI_API_KEY=YOUR_ACTUAL_API_KEY
+    ```
+
+4.  **Set Up the Frontend Environment:**
+    ```bash
+    cd ../game-craft-ai-scribe-main # Navigate to the frontend directory (adjust path if needed)
+    npm install
+    ```
+
+5.  **Run the Application:**
+
+    * **Using Separate Terminals:**
+        * **Backend:** Open one terminal, navigate to the `backend` folder, activate the virtual environment, and run: `py app.py` (or `python app.py` if `py` doesn't work).
+        * **Frontend:** Open another terminal, navigate to the main project folder (where the frontend code is), and run: `npm run dev`. This will usually start the frontend on `http://localhost:5173`.
+
+    * **Using the `run_app.bat` (Windows) or `run_app.sh` (Mac/Linux) Script (if you created one):**
+        * Simply double-click the `run_app.bat` file (Windows) or run `./run_app.sh` in the terminal (Mac/Linux) from the main project directory.
+
+## Using the Application
+
+Once both the backend and frontend servers are running, you can open your web browser and go to the address where the frontend is running (usually `http://localhost:5173`). You should then be able to enter prompts and generate game development code.
+
+## Notes
+
+* Remember to keep your Gemini API key secure and do not share it publicly.
+* This setup is for development purposes. For production deployment, you would need to configure a more robust server setup.
