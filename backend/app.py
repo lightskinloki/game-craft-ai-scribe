@@ -36,15 +36,20 @@ def generate_code():
         structured_prompt = f"""
         You are an AI assistant specialized in game development.
         
-        Generate game code based on this user request: {user_prompt}
+        User has the following game code already in their editor:
+        ```javascript
+        {existing_code}
+        ```
         
-        {f'Here is the existing code to modify or enhance: \n```\n{existing_code}\n```' if existing_code else ''}
+        The user's request is: {user_prompt}
         
-        Your response MUST be a JSON object with these two keys:
-        - code: The JavaScript/TypeScript game code implementation
-        - explanation: A detailed explanation of the code, how it works, and key concepts
+        Provide a detailed explanation of the changes needed including code examples. 
+        DO NOT provide a full replacement of the code - only provide the explanation.
         
-        The explanation should ONLY appear in the explanation field, NOT in the code field.
+        Your response MUST be a JSON object with these keys:
+        - explanation: A detailed explanation of the code changes needed, the concepts, and code snippets if relevant
+        
+        The explanation should contain any relevant code snippets that would need to be added or modified in the main game code.
         Make sure your response is valid JSON.
         """
         
@@ -58,47 +63,22 @@ def generate_code():
         try:
             # Handle case where Gemini returns properly formatted JSON
             result = json.loads(response_text)
-            if 'code' in result and 'explanation' in result:
-                return jsonify(result)
+            if 'explanation' in result:
+                return jsonify({
+                    "explanation": result['explanation']
+                })
         except json.JSONDecodeError:
-            # If Gemini didn't return valid JSON, we'll need to do some parsing
+            # If Gemini didn't return valid JSON, we'll need to use the full response
             pass
         
-        # Fallback: Try to separate code and explanation manually
-        # This is a simple heuristic and might need adjustment
-        code_parts = []
-        explanation_parts = []
-        
-        # Simple heuristic: code is typically within backticks or after "```" markers
-        in_code_block = False
-        lines = response_text.split('\n')
-        
-        for line in lines:
-            if line.startswith('```') or line.strip() == '```':
-                in_code_block = not in_code_block
-                continue
-                
-            if in_code_block:
-                code_parts.append(line)
-            else:
-                explanation_parts.append(line)
-        
-        code = '\n'.join(code_parts).strip()
-        explanation = '\n'.join(explanation_parts).strip()
-        
-        # If we couldn't extract code properly, use the whole response as explanation
-        if not code:
-            explanation = response_text
-            code = "// Gemini didn't generate structured code. Please see the explanation."
-        
+        # Fallback: Just return the full response as explanation
         return jsonify({
-            "code": code,
-            "explanation": explanation
+            "explanation": response_text
         })
         
     except Exception as e:
         print(f"Error: {str(e)}")
-        return jsonify({"error": f"Failed to generate code: {str(e)}"}), 500
+        return jsonify({"error": f"Failed to generate explanation: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

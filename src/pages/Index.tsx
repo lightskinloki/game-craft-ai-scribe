@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Header from '@/components/Header';
@@ -32,26 +31,22 @@ const Index = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate code');
+        throw new Error(errorData.error || 'Failed to generate explanation');
       }
       
       const data = await response.json();
       
-      // Make sure we're getting both parts of the response
+      // Update only the explanation, keep the code editor as is
       if (data.explanation) {
         setAiExplanation(data.explanation);
       }
       
-      if (data.code) {
-        setGeneratedCode(data.code);
-      }
-      
       toast({
-        title: 'Code generated!',
-        description: 'AI has generated code based on your prompt.',
+        title: 'AI Response Received',
+        description: 'The AI has analyzed your prompt.',
       });
     } catch (error) {
-      console.error('Error generating code:', error);
+      console.error('Error generating response:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.',

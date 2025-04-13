@@ -18,7 +18,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
 
   // Update local state when code prop changes
   useEffect(() => {
-    setEditorContent(code);
+    if (code && code !== editorContent) {
+      setEditorContent(code);
+    }
   }, [code]);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -96,7 +98,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
             onChange={handleCodeChange}
             className="w-full h-full min-h-[calc(100vh-10rem)] font-mono text-sm text-editor-text bg-transparent border-none resize-none focus:outline-none"
             spellCheck="false"
-            placeholder="// Your game code will appear here... You can also paste your code here."
+            placeholder="// You can write or paste your game code here..."
           />
         </div>
       </ScrollArea>

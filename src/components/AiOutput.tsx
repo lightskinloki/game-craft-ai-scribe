@@ -29,7 +29,7 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
         <Info className="h-12 w-12 mb-4 opacity-50" />
         <h3 className="text-lg font-medium mb-2">AI Explanation</h3>
         <p className="text-sm max-w-md">
-          Submit a prompt to receive an explanation of the generated code and game development concepts.
+          Submit a prompt to receive an explanation of the game development concepts and code changes needed.
         </p>
       </div>
     );
@@ -40,8 +40,11 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
       <div className="p-4 space-y-4" id="aiOutput">
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
-        <div className="whitespace-pre-wrap text-sm">
-          {explanation}
+        <div className="prose prose-sm max-w-none">
+          {/* Render the explanation text, preserving line breaks */}
+          <div className="whitespace-pre-wrap text-sm">
+            {explanation}
+          </div>
         </div>
       </div>
     </ScrollArea>
