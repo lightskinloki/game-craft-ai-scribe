@@ -5,6 +5,7 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import json
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,6 +21,31 @@ if not GEMINI_API_KEY:
 
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-pro')
+
+def extract_json_from_text(text):
+    """Extract JSON from text that might have markdown code blocks or other formatting."""
+    # Try to find JSON within ```json blocks
+    json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+    if json_match:
+        try:
+            return json.loads(json_match.group(1))
+        except json.JSONDecodeError:
+            pass
+    
+    # Try to extract just the JSON part
+    try:
+        # Find potential JSON objects (starting with { and ending with })
+        json_pattern = r'(\{[\s\S]*\})'
+        matches = re.findall(json_pattern, text)
+        for match in matches:
+            try:
+                return json.loads(match)
+            except json.JSONDecodeError:
+                continue
+    except:
+        pass
+    
+    return None
 
 @app.route('/generate', methods=['POST'])
 def generate_code():
@@ -61,22 +87,26 @@ def generate_code():
         
         # Process the response
         response_text = response.text
+        print(f"Raw response: {response_text[:200]}...") # Debug logging
         
         # Try to parse the response as JSON
+        result = None
+        # First try direct JSON parsing
         try:
-            # Handle case where Gemini returns properly formatted JSON
             result = json.loads(response_text)
-            if 'explanation' in result:
-                return jsonify({
-                    "explanation": result['explanation']
-                })
         except json.JSONDecodeError:
-            # If Gemini didn't return valid JSON, we'll need to use the full response
-            pass
+            # Try to extract JSON from text that might have markdown formatting
+            result = extract_json_from_text(response_text)
+        
+        # If we successfully parsed JSON and it has the expected structure
+        if result and isinstance(result, dict) and 'explanation' in result:
+            return jsonify({
+                "explanation": result['explanation']
+            })
         
         # Fallback: Just return the full response as explanation
         return jsonify({
-            "explanation": response_text
+            "explanation": f"AI Response: {response_text}"
         })
         
     except Exception as e:

@@ -35,19 +35,17 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
     );
   }
 
+  console.log('Rendering explanation:', explanation); // Add logging to debug
+
   return (
     <ScrollArea className="h-full w-full">
       <div className="p-4 space-y-4" id="aiOutput">
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          {/* Use pre-wrap to preserve whitespace and line breaks */}
-          <div 
-            className="whitespace-pre-wrap text-sm break-words" 
-            style={{ maxWidth: '100%', overflowWrap: 'break-word' }}
-          >
+          <pre className="whitespace-pre-wrap text-sm break-words bg-transparent border-0 p-0 font-sans">
             {explanation}
-          </div>
+          </pre>
         </div>
       </div>
     </ScrollArea>

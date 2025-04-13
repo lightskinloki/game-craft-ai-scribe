@@ -35,10 +35,15 @@ const Index = () => {
       }
       
       const data = await response.json();
+      console.log('API Response:', data); // Add logging to debug
       
       // Update only the explanation, keep the code editor as is
       if (data.explanation) {
         setAiExplanation(data.explanation);
+        console.log('Set AI explanation to:', data.explanation); // Add logging to debug
+      } else {
+        console.warn('API response is missing explanation field:', data);
+        setAiExplanation('No explanation received from AI.');
       }
       
       toast({
@@ -47,6 +52,7 @@ const Index = () => {
       });
     } catch (error) {
       console.error('Error generating response:', error);
+      setAiExplanation(`Error: ${error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.'}`);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.',
