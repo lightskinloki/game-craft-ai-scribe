@@ -2,6 +2,7 @@
 import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Info } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AiOutputProps {
   explanation: string;
@@ -35,13 +36,15 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
   }
 
   return (
-    <div className="p-4 space-y-4 h-full overflow-y-auto" id="aiOutput">
-      <h3 className="font-semibold text-lg">AI Explanation</h3>
-      <Separator className="my-2" />
-      <div className="whitespace-pre-wrap text-sm">
-        {explanation}
+    <ScrollArea className="h-full w-full">
+      <div className="p-4 space-y-4" id="aiOutput">
+        <h3 className="font-semibold text-lg">AI Explanation</h3>
+        <Separator className="my-2" />
+        <div className="whitespace-pre-wrap text-sm">
+          {explanation}
+        </div>
       </div>
-    </div>
+    </ScrollArea>
   );
 };
 

@@ -1,42 +1,36 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { CopyIcon, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CodeEditorProps {
   code: string;
   isLoading: boolean;
+  onCodeChange?: (code: string) => void;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading }) => {
-  const codeRef = useRef<HTMLPreElement>(null);
+const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }) => {
+  const [editorContent, setEditorContent] = useState(code);
+  const codeRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
+  // Update local state when code prop changes
   useEffect(() => {
-    // In a real implementation, we'd integrate a proper syntax highlighter like Prism.js
-    // or a full editor like Monaco/CodeMirror, but for now we'll keep it simple
-    if (codeRef.current) {
-      // Simple tokenization for demonstration
-      const tokens = code.split(/([{}();=])/g);
-      codeRef.current.innerHTML = tokens
-        .map((token) => {
-          if (token.match(/function|return|if|else|for|while|let|const|var/)) {
-            return `<span class="token keyword">${token}</span>`;
-          } else if (token.match(/[0-9]+/)) {
-            return `<span class="token number">${token}</span>`;
-          } else if (token.match(/["'`].*?["'`]/)) {
-            return `<span class="token string">${token}</span>`;
-          } else if (token.match(/[{}();=]/)) {
-            return `<span class="token punctuation">${token}</span>`;
-          }
-          return token;
-        })
-        .join('');
-    }
+    setEditorContent(code);
   }, [code]);
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newCode = e.target.value;
+    setEditorContent(newCode);
+    if (onCodeChange) {
+      onCodeChange(newCode);
+    }
+  };
+
   const copyCode = () => {
-    navigator.clipboard.writeText(code).then(
+    navigator.clipboard.writeText(editorContent).then(
       () => {
         toast({
           title: 'Code copied!',
@@ -55,7 +49,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading }) => {
 
   const downloadCode = () => {
     const element = document.createElement('a');
-    const file = new Blob([code], { type: 'text/plain' });
+    const file = new Blob([editorContent], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = 'gamecode.js';
     document.body.appendChild(element);
@@ -86,21 +80,26 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading }) => {
       <div className="flex items-center justify-between p-2 bg-secondary">
         <span className="text-sm font-medium">game.js</span>
         <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={copyCode} disabled={!code} title="Copy code">
+          <Button variant="ghost" size="sm" onClick={copyCode} title="Copy code">
             <CopyIcon className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={downloadCode} disabled={!code} title="Download code">
+          <Button variant="ghost" size="sm" onClick={downloadCode} title="Download code">
             <Download className="h-4 w-4" />
           </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-editor-background p-4 font-mono text-sm text-editor-text">
-        {code ? (
-          <pre ref={codeRef} className="whitespace-pre-wrap">{code}</pre>
-        ) : (
-          <pre className="text-muted-foreground">// Your game code will appear here...</pre>
-        )}
-      </div>
+      <ScrollArea className="flex-1 h-full bg-editor-background">
+        <div className="p-4 h-full">
+          <textarea
+            ref={codeRef}
+            value={editorContent}
+            onChange={handleCodeChange}
+            className="w-full h-full min-h-[calc(100vh-10rem)] font-mono text-sm text-editor-text bg-transparent border-none resize-none focus:outline-none"
+            spellCheck="false"
+            placeholder="// Your game code will appear here... You can also paste your code here."
+          />
+        </div>
+      </ScrollArea>
     </div>
   );
 };

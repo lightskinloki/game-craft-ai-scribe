@@ -24,7 +24,10 @@ const Index = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ 
+          prompt,
+          existingCode: generatedCode // Send existing code to the backend
+        }),
       });
       
       if (!response.ok) {
@@ -34,9 +37,14 @@ const Index = () => {
       
       const data = await response.json();
       
-      // Update state with the response data
-      setAiExplanation(data.explanation);
-      setGeneratedCode(data.code);
+      // Make sure we're getting both parts of the response
+      if (data.explanation) {
+        setAiExplanation(data.explanation);
+      }
+      
+      if (data.code) {
+        setGeneratedCode(data.code);
+      }
       
       toast({
         title: 'Code generated!',
@@ -52,6 +60,11 @@ const Index = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Handle code updates from the editor
+  const handleCodeChange = (newCode: string) => {
+    setGeneratedCode(newCode);
   };
 
   return (
@@ -70,7 +83,11 @@ const Index = () => {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={60} minSize={30}>
-            <CodeEditor code={generatedCode} isLoading={isProcessing} />
+            <CodeEditor 
+              code={generatedCode} 
+              isLoading={isProcessing} 
+              onCodeChange={handleCodeChange}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

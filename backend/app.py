@@ -24,12 +24,13 @@ model = genai.GenerativeModel('gemini-1.5-pro')
 @app.route('/generate', methods=['POST'])
 def generate_code():
     try:
-        # Get the prompt from the request
+        # Get the prompt and existing code from the request
         data = request.json
         if not data or 'prompt' not in data:
             return jsonify({"error": "No prompt provided"}), 400
         
         user_prompt = data['prompt']
+        existing_code = data.get('existingCode', '')
         
         # Create a structured prompt for Gemini that asks for code and explanation
         structured_prompt = f"""
@@ -37,10 +38,13 @@ def generate_code():
         
         Generate game code based on this user request: {user_prompt}
         
+        {f'Here is the existing code to modify or enhance: \n```\n{existing_code}\n```' if existing_code else ''}
+        
         Your response MUST be a JSON object with these two keys:
         - code: The JavaScript/TypeScript game code implementation
         - explanation: A detailed explanation of the code, how it works, and key concepts
         
+        The explanation should ONLY appear in the explanation field, NOT in the code field.
         Make sure your response is valid JSON.
         """
         
