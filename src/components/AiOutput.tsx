@@ -40,9 +40,12 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
       <div className="p-4 space-y-4" id="aiOutput">
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
-        <div className="prose prose-sm max-w-none">
-          {/* Render the explanation text, preserving line breaks */}
-          <div className="whitespace-pre-wrap text-sm">
+        <div className="prose prose-sm max-w-none dark:prose-invert">
+          {/* Use pre-wrap to preserve whitespace and line breaks */}
+          <div 
+            className="whitespace-pre-wrap text-sm break-words" 
+            style={{ maxWidth: '100%', overflowWrap: 'break-word' }}
+          >
             {explanation}
           </div>
         </div>

@@ -46,6 +46,9 @@ def generate_code():
         Provide a detailed explanation of the changes needed including code examples. 
         DO NOT provide a full replacement of the code - only provide the explanation.
         
+        Focus on explaining concepts, providing code snippets that the user can integrate,
+        and helping them understand how to implement the requested changes.
+        
         Your response MUST be a JSON object with these keys:
         - explanation: A detailed explanation of the code changes needed, the concepts, and code snippets if relevant
         
