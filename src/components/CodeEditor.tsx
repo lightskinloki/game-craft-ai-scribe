@@ -1,9 +1,12 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CopyIcon, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 interface CodeEditorProps {
   code: string;
@@ -12,27 +15,22 @@ interface CodeEditorProps {
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }) => {
-  const [editorContent, setEditorContent] = useState(code);
-  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const codeRef = useRef(code);
   const { toast } = useToast();
 
-  // Update local state when code prop changes
+  // Update the ref when code prop changes
   useEffect(() => {
-    if (code && code !== editorContent) {
-      setEditorContent(code);
-    }
+    codeRef.current = code;
   }, [code]);
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newCode = e.target.value;
-    setEditorContent(newCode);
+  const handleCodeChange = (value: string) => {
     if (onCodeChange) {
-      onCodeChange(newCode);
+      onCodeChange(value);
     }
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText(editorContent).then(
+    navigator.clipboard.writeText(codeRef.current).then(
       () => {
         toast({
           title: 'Code copied!',
@@ -51,7 +49,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
 
   const downloadCode = () => {
     const element = document.createElement('a');
-    const file = new Blob([editorContent], { type: 'text/plain' });
+    const file = new Blob([codeRef.current], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = 'gamecode.js';
     document.body.appendChild(element);
@@ -92,13 +90,35 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
       </div>
       <ScrollArea className="flex-1 h-full bg-editor-background">
         <div className="p-4 h-full">
-          <textarea
-            ref={codeRef}
-            value={editorContent}
+          <CodeMirror
+            value={code}
+            height="100%"
+            theme={oneDark}
+            extensions={[javascript()]}
             onChange={handleCodeChange}
-            className="w-full h-full min-h-[calc(100vh-10rem)] font-mono text-sm text-editor-text bg-transparent border-none resize-none focus:outline-none"
-            spellCheck="false"
-            placeholder="// You can write or paste your game code here..."
+            basicSetup={{
+              lineNumbers: true,
+              highlightActiveLineGutter: true,
+              highlightSpecialChars: true,
+              foldGutter: true,
+              dropCursor: true,
+              allowMultipleSelections: true,
+              indentOnInput: true,
+              syntaxHighlighting: true,
+              bracketMatching: true,
+              closeBrackets: true,
+              autocompletion: true,
+              rectangularSelection: true,
+              crosshairCursor: true,
+              highlightActiveLine: true,
+              highlightSelectionMatches: true,
+              closeBracketsKeymap: true,
+              searchKeymap: true,
+              foldKeymap: true,
+              completionKeymap: true,
+              lintKeymap: true,
+            }}
+            className="h-full min-h-[calc(100vh-10rem)]"
           />
         </div>
       </ScrollArea>
