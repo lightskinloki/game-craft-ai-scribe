@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Header from '@/components/Header';
@@ -17,6 +18,8 @@ const Index = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Submitting prompt:', prompt);
+      
       // Call the backend API
       const response = await fetch('http://localhost:5000/generate', {
         method: 'POST',
@@ -35,15 +38,15 @@ const Index = () => {
       }
       
       const data = await response.json();
-      console.log('API Response:', data); // Add logging to debug
+      console.log('API Response:', data); // Debug log the entire response
       
-      // Update only the explanation, keep the code editor as is
-      if (data.explanation) {
+      // Update the explanation
+      if (data && typeof data.explanation === 'string') {
+        console.log('Setting explanation state to:', data.explanation);
         setAiExplanation(data.explanation);
-        console.log('Set AI explanation to:', data.explanation); // Add logging to debug
       } else {
-        console.warn('API response is missing explanation field:', data);
-        setAiExplanation('No explanation received from AI.');
+        console.warn('Invalid explanation format:', data);
+        setAiExplanation('Received an invalid response format from the AI. Please try again.');
       }
       
       toast({

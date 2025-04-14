@@ -58,6 +58,9 @@ def generate_code():
         user_prompt = data['prompt']
         existing_code = data.get('existingCode', '')
         
+        print(f"Received prompt: {user_prompt[:100]}...")
+        print(f"Existing code length: {len(existing_code)}")
+        
         # Create a structured prompt for Gemini that asks for code and explanation
         structured_prompt = f"""
         You are an AI assistant specialized in game development.
@@ -87,26 +90,33 @@ def generate_code():
         
         # Process the response
         response_text = response.text
-        print(f"Raw response: {response_text[:200]}...") # Debug logging
+        print(f"Raw response from AI (first 200 chars): {response_text[:200]}...")
         
         # Try to parse the response as JSON
         result = None
+        
         # First try direct JSON parsing
         try:
             result = json.loads(response_text)
-        except json.JSONDecodeError:
+            print("Successfully parsed JSON directly")
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {e}")
             # Try to extract JSON from text that might have markdown formatting
             result = extract_json_from_text(response_text)
+            if result:
+                print("Successfully extracted JSON from text")
         
         # If we successfully parsed JSON and it has the expected structure
         if result and isinstance(result, dict) and 'explanation' in result:
+            print(f"Returning explanation from JSON, length: {len(result['explanation'])}")
             return jsonify({
                 "explanation": result['explanation']
             })
         
         # Fallback: Just return the full response as explanation
+        print("Using fallback: returning full text as explanation")
         return jsonify({
-            "explanation": f"AI Response: {response_text}"
+            "explanation": response_text
         })
         
     except Exception as e:

@@ -10,6 +10,11 @@ interface AiOutputProps {
 }
 
 const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
+  console.log('AiOutput rendering with explanation:', explanation);
+  console.log('isLoading:', isLoading);
+  console.log('explanation type:', typeof explanation);
+  console.log('explanation length:', explanation ? explanation.length : 0);
+
   if (isLoading) {
     return (
       <div className="p-4 h-full">
@@ -35,11 +40,9 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
     );
   }
 
-  console.log('Rendering explanation:', explanation); // Add logging to debug
-
   return (
     <ScrollArea className="h-full w-full">
-      <div className="p-4 space-y-4" id="aiOutput">
+      <div className="p-4 space-y-4" id="aiOutput" data-testid="aiOutput">
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
         <div className="prose prose-sm max-w-none dark:prose-invert">
