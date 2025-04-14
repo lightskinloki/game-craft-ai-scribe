@@ -147,11 +147,10 @@ function update() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header>
-        <div className="ml-auto">
-          <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
-        </div>
-      </Header>
+      <Header />
+      <div className="absolute top-0 right-4 h-16 flex items-center">
+        <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
+      </div>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left panel - AI output and prompt input */}
