@@ -57,10 +57,10 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, assets }) => {
         let preloadMatch = userCode.match(/preload\\(\\)[^{]*{([^}]*)}/);
         
         if (preloadMatch && preloadMatch[1]) {
-          const preloadContent = preloadMatch[1];
+          const preloadUserContent = preloadMatch[1]; // Fix variable name here
           const newPreload = \`preload() {
         ${assetPreloadCode}
-        ${preloadContent}
+        ${preloadUserContent}
       }\`;
           
           // Replace the preload function

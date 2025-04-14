@@ -145,7 +145,6 @@ function update() {
     });
   };
 
-  // The key fix is here - we need to pass ModeSelector correctly to Header
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header>
