@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Header from '@/components/Header';
@@ -146,10 +145,13 @@ function update() {
     });
   };
 
+  // The key fix is here - we need to pass ModeSelector correctly to Header
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header>
-        <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
+        <div className="ml-auto">
+          <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
+        </div>
       </Header>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
