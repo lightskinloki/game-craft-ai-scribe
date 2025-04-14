@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlayIcon, RefreshCw } from "lucide-react";
@@ -48,29 +47,24 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, assets }) => {
   <script>
     // Wrap user code in try-catch to prevent silent errors
     try {
-      // Add asset preloading to user code if needed
+      // Explicitly extract preload content
       const userCode = \`${code}\`;
+      const preloadRegex = /preload\\(\\)[^{]*{([^}]*)}/s;
+      const preloadMatch = userCode.match(preloadRegex);
       
-      // Replace the preload function if it exists
-      if (userCode.includes('preload()') && ${assets.length > 0}) {
-        // Extract the preload function content
-        let preloadMatch = userCode.match(/preload\\(\\)[^{]*{([^}]*)}/);
-        
-        if (preloadMatch && preloadMatch[1]) {
-          const preloadUserContent = preloadMatch[1]; // Using variable name that matches usage below
-          const newPreload = \`preload() {
+      const preloadUserContent = preloadMatch ? preloadMatch[1].trim() : '';
+      
+      // Construct new preload function with asset loading
+      const modifiedCode = userCode.replace(
+        preloadRegex, 
+        \`preload() {
         ${assetPreloadCode}
         ${preloadUserContent}
-      }\`;
-          
-          // Replace the preload function
-          eval(userCode.replace(/preload\\(\\)[^{]*{([^}]*)}/s, newPreload));
-        } else {
-          eval(userCode);
-        }
-      } else {
-        eval(userCode);
-      }
+      }\`
+      );
+      
+      // Evaluate the modified code
+      eval(modifiedCode);
     } catch (error) {
       console.error('Error in game code:', error);
       document.body.innerHTML = '<div style="color: red; padding: 20px; font-family: monospace;"><h3>Error in game code:</h3><pre>' + error.toString() + '</pre></div>';
