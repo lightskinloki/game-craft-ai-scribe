@@ -149,9 +149,7 @@ function update() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header>
-        <div className="ml-auto">
-          <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
-        </div>
+        <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
       </Header>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
