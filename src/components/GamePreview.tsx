@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlayIcon, RefreshCw } from "lucide-react";
@@ -56,10 +57,10 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, assets }) => {
         let preloadMatch = userCode.match(/preload\\(\\)[^{]*{([^}]*)}/);
         
         if (preloadMatch && preloadMatch[1]) {
-          const preloadContent = preloadMatch[1]; // Using consistent variable name
+          const preloadUserContent = preloadMatch[1]; // Using variable name that matches usage below
           const newPreload = \`preload() {
         ${assetPreloadCode}
-        ${preloadContent}
+        ${preloadUserContent}
       }\`;
           
           // Replace the preload function
