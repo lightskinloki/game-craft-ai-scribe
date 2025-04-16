@@ -3,6 +3,8 @@ import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import CodeBlock from './CodeBlock';
 
 interface AiOutputProps {
   explanation: string;
@@ -46,9 +48,50 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          <pre className="whitespace-pre-wrap text-sm break-words bg-transparent border-0 p-0 font-sans">
+          <ReactMarkdown
+            components={{
+              code({ node, inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline && match ? (
+                  <CodeBlock
+                    language={match[1]}
+                    value={String(children).replace(/\n$/, '')}
+                    {...props}
+                  />
+                ) : (
+                  <code className="px-1 py-0.5 rounded bg-secondary" {...props}>
+                    {children}
+                  </code>
+                );
+              },
+              p({ children }) {
+                return <p className="mb-4 leading-relaxed">{children}</p>;
+              },
+              h1({ children }) {
+                return <h1 className="text-2xl font-bold my-4">{children}</h1>;
+              },
+              h2({ children }) {
+                return <h2 className="text-xl font-bold my-3">{children}</h2>;
+              },
+              h3({ children }) {
+                return <h3 className="text-lg font-bold my-2">{children}</h3>;
+              },
+              ul({ children }) {
+                return <ul className="list-disc pl-6 mb-4">{children}</ul>;
+              },
+              ol({ children }) {
+                return <ol className="list-decimal pl-6 mb-4">{children}</ol>;
+              },
+              li({ children }) {
+                return <li className="mb-1">{children}</li>;
+              },
+              blockquote({ children }) {
+                return <blockquote className="border-l-4 border-primary pl-4 italic my-4">{children}</blockquote>;
+              }
+            }}
+          >
             {explanation}
-          </pre>
+          </ReactMarkdown>
         </div>
       </div>
     </ScrollArea>
