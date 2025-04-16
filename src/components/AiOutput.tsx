@@ -50,9 +50,11 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
         <div className="prose prose-sm max-w-none dark:prose-invert">
           <ReactMarkdown
             components={{
-              code({ node, inline, className, children, ...props }) {
+              // Fix the TypeScript error by properly typing the code props
+              code({className, children, ...props}) {
                 const match = /language-(\w+)/.exec(className || '');
-                return !inline && match ? (
+                // Check if it's a code block (not inline) based on the className containing language-*
+                return match ? (
                   <CodeBlock
                     language={match[1]}
                     value={String(children).replace(/\n$/, '')}
