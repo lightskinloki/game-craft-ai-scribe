@@ -3,6 +3,8 @@ import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import CodeBlock from '@/components/CodeBlock';
 
 interface AiOutputProps {
   explanation: string;
@@ -46,9 +48,34 @@ const AiOutput: React.FC<AiOutputProps> = ({ explanation, isLoading }) => {
         <h3 className="font-semibold text-lg">AI Explanation</h3>
         <Separator className="my-2" />
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          <pre className="whitespace-pre-wrap text-sm break-words bg-transparent border-0 p-0 font-sans">
+          <ReactMarkdown
+            components={{
+              code({ node, inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || '');
+                const language = match ? match[1] : '';
+                
+                if (inline) {
+                  return (
+                    <code 
+                      className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" 
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                }
+                
+                return (
+                  <CodeBlock
+                    language={language}
+                    value={String(children).replace(/\n$/, '')}
+                  />
+                );
+              }
+            }}
+          >
             {explanation}
-          </pre>
+          </ReactMarkdown>
         </div>
       </div>
     </ScrollArea>
