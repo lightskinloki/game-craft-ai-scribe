@@ -1,132 +1,109 @@
-GameCraft AI Scribe - Development Roadmap
+GameCraft AI Scribe - Updated Development Roadmap
 
 Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users.
 
-Phase 1: Core Enhancements & Stability (MVP/Launch Focus)
+Phase 1: Core Enhancements & Stability (Nearing Completion)
 
 Focus: Address critical usability gaps, enhance the core debugging experience, and ensure a stable foundation.
 
+Status: Significant progress made, major core features implemented. Focus shifts to bug fixing and remaining Phase 1 items.
+
 Key Features:
 
-Project Saving & Loading (Local): DONE
+✅ Project Saving & Loading (Local): DONE (Assumes implementation based on prompt)
 
-Implement functionality to save the current project state (code in editor, asset list, editor mode) to a local file (e.g., a single .json or a structured format).
+✅ Basic Multi-File Support (game.js, index.html): DONE (Assumes implementation based on prompt)
 
-Implement functionality to load a previously saved project file.
+✅ Phaser Console Log Access: DONE (Assumes implementation based on prompt & new Console panel)
 
-(Consider using the browser's File System Access API for a smoother experience).
+🔄 UI Polish & Bug Fixing: IN PROGRESS / NEXT FOCUS
 
-Basic Multi-File Support: DONE
+🚨 PRIORITY BUG: Fix Missing "Run Game" Button: The button to trigger the game preview (likely within the "Preview" tab) needs to be re-implemented/fixed after layout refactoring. This is critical for Phaser mode functionality.
 
-Introduce a simple file tree/tab UI panel.
+Address other known layout issues, component glitches, or inconsistencies.
 
-Allow users to create/edit at least game.js and index.html.
+Improve loading states and user feedback.
 
-Update the backend /generate call to potentially send context from the currently active file.
+Implement the simple "Launch Application" button (Header) - Lower priority.
 
-Update the CodeEditor to display the content of the active file.
+⏳ Basic Project Export: PENDING
 
-Phaser Console Log Access: DONE
+Add "Export Project" button.
 
-Modify GamePreview.tsx's iframe script to capture console.log, console.warn, console.error messages.
-
-Use window.parent.postMessage to send these logs back to the main application.
-
-Add a new "Console Output" panel (perhaps tabbed with Asset Manager or below the preview) in Index.tsx to display these logs.
-
-Basic Project Export:
-
-Add an "Export Project" button.
-
-Functionality to zip the current code file(s) (game.js, index.html) and all uploaded assets from the phaser_assets directory into a downloadable ZIP file.
-
-UI Polish & Bug Fixing:
-
-Address any known layout issues, component glitches, or inconsistencies.
-
-Improve loading states and user feedback during processing/uploads.
-
-Add the simple "Launch Application" button (e.g., in the Header) that opens the local development URL in a new tab.
+Implement ZIP creation (code files + assets).
 
 Phase 2: Feature Deepening & Workflow Improvements
 
-Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction.
+Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction. This phase becomes the focus after Phase 1 is fully complete and stable.
 
-Key Features:
+Key Features: (Priority within Phase 2 can be adjusted)
 
 Editor Enhancements:
 
-Linting: Integrate ESLint (or similar) into CodeMirror to show syntax/style warnings in the editor.
+Linting (ESLint Integration).
 
-Formatting: Integrate Prettier (or similar) with a button to format the code in the editor.
-
-Asset Manager Improvements:
-
-Display image thumbnails in the asset list.
-
-Potentially add handling for paired assets (e.g., linking an atlas PNG with its JSON data file during upload or management).
+Formatting (Prettier Integration).
 
 AI Conversation History:
 
-Implement basic session-based history. Store recent prompts and AI responses.
+Implement session-based history panel.
 
-Display history in a collapsible panel or separate view.
+(Optional: Context sending).
 
-(Optional: Allow sending history context back to the AI for follow-up questions - requires careful backend context management).
+Asset Manager Improvements:
+
+Display image thumbnails.
+
+(Optional: Paired asset handling).
 
 Project Templates:
 
-Define a few basic starting templates (e.g., "Blank Phaser Project", "Simple Platformer Setup").
-
-Add UI (e.g., on load or via a "New Project" menu) to allow users to start from a template.
+Define & implement basic templates.
 
 Persistent Settings:
 
-Use localStorage to remember user preferences like theme (if applicable), editor mode, and potentially panel layout sizes across sessions.
+Use localStorage for theme, mode, layout sizes.
 
 Phase 3: Polish, Sharing & Advanced Features
 
-Focus: Refine the user experience further, explore sharing/deployment options, and add more advanced AI capabilities.
+Focus: Refine UX, explore sharing/deployment, add advanced AI capabilities. (Further out)
 
 Key Features:
 
-Advanced Editor Features:
+Advanced Editor Features: (Search/Replace, Phaser Autocompletion).
 
-Search/Replace: Implement find/replace functionality within CodeMirror.
+Cloud Saving & User Accounts: (Significant undertaking).
 
-(Optional: Phaser Autocompletion - requires integrating Phaser type definitions).
+Simple Project Sharing: (Requires cloud saving).
 
-Cloud Saving & User Accounts:
+Contextual AI Prompts: ("Refactor this", "Explain function").
 
-Implement a user authentication system.
+Enhanced Onboarding/Tutorial.
 
-Modify backend to store project data (code, assets, state) associated with user accounts in a database.
+Future Considerations / Phase X: Advanced & Experimental Features
 
-Update frontend save/load logic to interact with the backend API instead of local files. (This is a significant undertaking).
+Focus: Explore cutting-edge integrations once the core app is mature.
 
-Simple Project Sharing:
+Key Features:
 
-(Requires user accounts/cloud saving) Implement functionality to generate a shareable, read-only link to a saved project.
+AI-Assisted Tilemap Editor (Experimental / Long-Term).
 
-Contextual AI Prompts:
+Version Control Integration.
 
-Add specific buttons/actions like "Refactor selected code", "Explain this function", "Optimize this loop" that send targeted prompts to the AI.
+Build/Deployment Integration.
 
-Enhanced Onboarding/Tutorial:
+Collaboration Features.
 
-Create a brief guided tour or help section explaining the UI and features for new users.
+Visual Editor Elements.
 
-Future Considerations (Beyond V1 Launch):
+Integrated Debugger.
 
-Version Control Integration: Basic Git commands (commit, push/pull if linked to a repo).
+Support for Other Engines.
 
-Build/Deployment Integration: Tools to prepare the project for deployment to platforms like itch.io, Netlify, etc.
+Immediate Next Steps Based on This Roadmap:
 
-Collaboration: Real-time multi-user editing features.
+FIX THE "RUN GAME" BUTTON: This is the absolute top priority to restore core Phaser mode functionality. Investigate GamePreview.tsx and Index.tsx where the tab layout was implemented to see where the button/trigger was lost or needs to be re-added/re-connected.
 
-Visual Editor Elements: Drag-and-drop UI for scene layout or object placement.
+Complete Basic Project Export: Once the preview is working again, finishing the export feature rounds out Phase 1 nicely.
 
-Integrated Debugger: Linking the code editor to the preview for step-through debugging.
-
-Support for Other Engines: Adapting preview/asset logic for other frameworks (e.g., Three.js, PixiJS).
-
+General UI Polish/Bug Fixing: Address any other smaller issues identified during recent development.
