@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Header from '@/components/Header';
@@ -13,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
+import ConsoleOutput, { LogEntry } from '@/components/ConsoleOutput';
 
 // Updated ProjectSaveState interface
 const updateProjectSaveState = () => {
@@ -32,6 +32,7 @@ const Index = () => {
     'index.html': '<!DOCTYPE html>\n<html>\n<head>\n  <title>Game</title>\n  <style>body { margin: 0; }</style>\n</head>\n<body>\n  <div id="game-container"></div>\n  <script src="game.js"></script>\n</body>\n</html>'
   });
   const [activeFilename, setActiveFilename] = useState<string>('game.js');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -230,6 +231,27 @@ function update() {
     }
   };
 
+  // Handle console messages from the iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'console' && event.data?.method && event.data?.args) {
+        const newLog: LogEntry = {
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          level: event.data.method as LogEntry['level'],
+          message: event.data.args.join(' ')
+        };
+        
+        setLogs(prevLogs => [...prevLogs, newLog].slice(-200));
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleClearLogs = () => setLogs([]);
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header 
@@ -257,13 +279,13 @@ function update() {
           
           <ResizableHandle withHandle />
           
-          {/* Middle panel - Game preview and asset manager (only in Phaser mode) */}
+          {/* Middle panel - Game preview, console output and asset manager */}
           {editorMode === 'phaser' && (
             <>
               <ResizablePanel defaultSize={40} minSize={20}>
                 <ResizablePanelGroup direction="vertical">
                   {/* Game Preview */}
-                  <ResizablePanel defaultSize={60} minSize={30}>
+                  <ResizablePanel defaultSize={50} minSize={30}>
                     <GamePreview 
                       code={files['game.js']} 
                       htmlTemplate={files['index.html']}
@@ -273,8 +295,15 @@ function update() {
                   
                   <ResizableHandle withHandle />
                   
+                  {/* Console Output */}
+                  <ResizablePanel defaultSize={25} minSize={20}>
+                    <ConsoleOutput logs={logs} onClearLogs={handleClearLogs} />
+                  </ResizablePanel>
+                  
+                  <ResizableHandle withHandle />
+                  
                   {/* Asset Manager */}
-                  <ResizablePanel defaultSize={40} minSize={20}>
+                  <ResizablePanel defaultSize={25} minSize={20}>
                     <AssetManager 
                       assets={assets}
                       onAssetsChange={setAssets}
@@ -287,7 +316,7 @@ function update() {
             </>
           )}
           
-          {/* Right panel - File tabs and code editor */}
+          {/* Right panel - editor */}
           <ResizablePanel defaultSize={editorMode === 'phaser' ? 30 : 70} minSize={20} className="flex flex-col">
             <FileTabs 
               filenames={Object.keys(files)} 

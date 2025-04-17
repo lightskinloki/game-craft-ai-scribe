@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Asset } from './AssetManager';
 
@@ -59,7 +58,13 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
             window.parent.postMessage({
               type: 'console',
               method: 'log',
-              args: Array.from(arguments).map(arg => String(arg))
+              args: Array.from(arguments).map(arg => {
+                try {
+                  return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+                } catch (e) {
+                  return String(arg);
+                }
+              })
             }, '*');
           };
           
@@ -68,7 +73,13 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
             window.parent.postMessage({
               type: 'console',
               method: 'warn',
-              args: Array.from(arguments).map(arg => String(arg))
+              args: Array.from(arguments).map(arg => {
+                try {
+                  return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+                } catch (e) {
+                  return String(arg);
+                }
+              })
             }, '*');
           };
           
@@ -77,7 +88,13 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
             window.parent.postMessage({
               type: 'console',
               method: 'error',
-              args: Array.from(arguments).map(arg => String(arg))
+              args: Array.from(arguments).map(arg => {
+                try {
+                  return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+                } catch (e) {
+                  return String(arg);
+                }
+              })
             }, '*');
           };
           
@@ -86,7 +103,13 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
             window.parent.postMessage({
               type: 'console',
               method: 'info',
-              args: Array.from(arguments).map(arg => String(arg))
+              args: Array.from(arguments).map(arg => {
+                try {
+                  return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+                } catch (e) {
+                  return String(arg);
+                }
+              })
             }, '*');
           };
           
