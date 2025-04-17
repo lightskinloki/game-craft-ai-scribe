@@ -6,23 +6,25 @@ Phase 1: Core Enhancements & Stability (Nearing Completion)
 
 Focus: Address critical usability gaps, enhance the core debugging experience, and ensure a stable foundation.
 
-Status: Significant progress made, major core features implemented. Focus shifts to bug fixing and remaining Phase 1 items.
+Status: Core features implemented. Focus shifts to ensuring the new reactive preview works well and implementing remaining Phase 1 items.
 
 Key Features:
 
-✅ Project Saving & Loading (Local): DONE 
+✅ Project Saving & Loading (Local): DONE
 
-✅ Basic Multi-File Support (game.js, index.html): DONE 
+✅ Basic Multi-File Support (game.js, index.html)
 
-✅ Phaser Console Log Access: DONE 
+✅ Phaser Console Log Access: DONE
+
+✅ Game Preview - Automatic Update: DONE (Implemented via useEffect in GamePreview.tsx. Replaced manual "Run Game" button).
 
 🔄 UI Polish & Bug Fixing: IN PROGRESS / NEXT FOCUS
 
-🚨 PRIORITY BUG: Fix Missing "Run Game" Button: The button to trigger the game preview (likely within the "Preview" tab) needs to be re-implemented/fixed after layout refactoring. This is critical for Phaser mode functionality.
+Evaluate Auto-Preview Performance & UX: Test if the automatic preview refresh is smooth and responsive, or if it feels laggy/disruptive during rapid typing. Consider if an optional manual refresh/run button might still be desirable for some users or complex projects (could be added later in Phase 2 if needed).
 
-Address other known layout issues, component glitches, or inconsistencies.
+Address other known layout issues, component glitches, or inconsistencies (especially around the new Tabbed layout if implemented).
 
-Improve loading states and user feedback.
+Improve loading states and user feedback (e.g., during AI processing, file saving/loading).
 
 Implement the simple "Launch Application" button (Header) - Lower priority.
 
@@ -34,7 +36,7 @@ Implement ZIP creation (code files + assets).
 
 Phase 2: Feature Deepening & Workflow Improvements
 
-Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction. This phase becomes the focus after Phase 1 is fully complete and stable.
+Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction.
 
 Key Features: (Priority within Phase 2 can be adjusted)
 
@@ -100,10 +102,10 @@ Integrated Debugger.
 
 Support for Other Engines.
 
-Immediate Next Steps Based on This Roadmap:
+Revised Immediate Next Steps:
 
-FIX THE "RUN GAME" BUTTON: This is the absolute top priority to restore core Phaser mode functionality. Investigate GamePreview.tsx and Index.tsx where the tab layout was implemented to see where the button/trigger was lost or needs to be re-added/re-connected.
+Verify & Evaluate Auto-Preview: Thoroughly test the automatic preview update. Does it work reliably? Is it performant enough? Does it feel good to use while coding? Address any bugs specifically related to this reactive update.
 
-Complete Basic Project Export: Once the preview is working again, finishing the export feature rounds out Phase 1 nicely.
+Implement Basic Project Export: This is the last major feature planned for Phase 1.
 
-General UI Polish/Bug Fixing: Address any other smaller issues identified during recent development.
+General UI Polish/Bug Fixing: Address any other smaller issues, refine the layout (especially the tabbed middle panel if you implemented it), and improve loading indicators.
