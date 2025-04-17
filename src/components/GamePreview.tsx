@@ -100,7 +100,15 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
           });
         })();
       `;
-      doc.body.appendChild(consoleLogScript);
+      
+      // Ensure the body exists before appending the script
+      if (doc.body) {
+        doc.body.appendChild(consoleLogScript);
+      } else {
+        // If body doesn't exist yet, append the script content to the HTML
+        const scriptHtml = `<script>${consoleLogScript.textContent}</script>`;
+        doc.write(scriptHtml);
+      }
       
       doc.close();
     } else {
