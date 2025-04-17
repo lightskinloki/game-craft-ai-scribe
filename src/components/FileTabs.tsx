@@ -1,7 +1,13 @@
 
 import React from 'react';
+import { FileCode, FileText, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { FileCode, FileText } from 'lucide-react';
 
 interface FileTabsProps {
   filenames: string[];
@@ -22,21 +28,28 @@ const FileTabs: React.FC<FileTabsProps> = ({
   };
 
   return (
-    <div className="flex bg-secondary/50 px-2 pt-2 border-b border-border overflow-x-auto">
-      {filenames.map(filename => (
-        <Button
-          key={filename}
-          variant={activeFilename === filename ? "default" : "ghost"}
-          className={`
-            rounded-b-none px-4 py-2 h-9 text-sm font-medium 
-            ${activeFilename === filename ? 'bg-background' : ''}
-          `}
-          onClick={() => onSelectFile(filename)}
-        >
-          {getFileIcon(filename)}
-          {filename}
-        </Button>
-      ))}
+    <div className="flex bg-secondary/50 px-4 py-2 border-b border-border">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex items-center gap-2">
+            {getFileIcon(activeFilename)}
+            {activeFilename}
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {filenames.map(filename => (
+            <DropdownMenuItem
+              key={filename}
+              onClick={() => onSelectFile(filename)}
+              className="flex items-center gap-2"
+            >
+              {getFileIcon(filename)}
+              {filename}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
