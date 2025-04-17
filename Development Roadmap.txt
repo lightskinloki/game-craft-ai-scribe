@@ -1,0 +1,132 @@
+GameCraft AI Scribe - Development Roadmap
+
+Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users.
+
+Phase 1: Core Enhancements & Stability (MVP/Launch Focus)
+
+Focus: Address critical usability gaps, enhance the core debugging experience, and ensure a stable foundation.
+
+Key Features:
+
+Project Saving & Loading (Local):
+
+Implement functionality to save the current project state (code in editor, asset list, editor mode) to a local file (e.g., a single .json or a structured format).
+
+Implement functionality to load a previously saved project file.
+
+(Consider using the browser's File System Access API for a smoother experience).
+
+Basic Multi-File Support:
+
+Introduce a simple file tree/tab UI panel.
+
+Allow users to create/edit at least game.js and index.html.
+
+Update the backend /generate call to potentially send context from the currently active file.
+
+Update the CodeEditor to display the content of the active file.
+
+Phaser Console Log Access:
+
+Modify GamePreview.tsx's iframe script to capture console.log, console.warn, console.error messages.
+
+Use window.parent.postMessage to send these logs back to the main application.
+
+Add a new "Console Output" panel (perhaps tabbed with Asset Manager or below the preview) in Index.tsx to display these logs.
+
+Basic Project Export:
+
+Add an "Export Project" button.
+
+Functionality to zip the current code file(s) (game.js, index.html) and all uploaded assets from the phaser_assets directory into a downloadable ZIP file.
+
+UI Polish & Bug Fixing:
+
+Address any known layout issues, component glitches, or inconsistencies.
+
+Improve loading states and user feedback during processing/uploads.
+
+Add the simple "Launch Application" button (e.g., in the Header) that opens the local development URL in a new tab.
+
+Phase 2: Feature Deepening & Workflow Improvements
+
+Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction.
+
+Key Features:
+
+Editor Enhancements:
+
+Linting: Integrate ESLint (or similar) into CodeMirror to show syntax/style warnings in the editor.
+
+Formatting: Integrate Prettier (or similar) with a button to format the code in the editor.
+
+Asset Manager Improvements:
+
+Display image thumbnails in the asset list.
+
+Potentially add handling for paired assets (e.g., linking an atlas PNG with its JSON data file during upload or management).
+
+AI Conversation History:
+
+Implement basic session-based history. Store recent prompts and AI responses.
+
+Display history in a collapsible panel or separate view.
+
+(Optional: Allow sending history context back to the AI for follow-up questions - requires careful backend context management).
+
+Project Templates:
+
+Define a few basic starting templates (e.g., "Blank Phaser Project", "Simple Platformer Setup").
+
+Add UI (e.g., on load or via a "New Project" menu) to allow users to start from a template.
+
+Persistent Settings:
+
+Use localStorage to remember user preferences like theme (if applicable), editor mode, and potentially panel layout sizes across sessions.
+
+Phase 3: Polish, Sharing & Advanced Features
+
+Focus: Refine the user experience further, explore sharing/deployment options, and add more advanced AI capabilities.
+
+Key Features:
+
+Advanced Editor Features:
+
+Search/Replace: Implement find/replace functionality within CodeMirror.
+
+(Optional: Phaser Autocompletion - requires integrating Phaser type definitions).
+
+Cloud Saving & User Accounts:
+
+Implement a user authentication system.
+
+Modify backend to store project data (code, assets, state) associated with user accounts in a database.
+
+Update frontend save/load logic to interact with the backend API instead of local files. (This is a significant undertaking).
+
+Simple Project Sharing:
+
+(Requires user accounts/cloud saving) Implement functionality to generate a shareable, read-only link to a saved project.
+
+Contextual AI Prompts:
+
+Add specific buttons/actions like "Refactor selected code", "Explain this function", "Optimize this loop" that send targeted prompts to the AI.
+
+Enhanced Onboarding/Tutorial:
+
+Create a brief guided tour or help section explaining the UI and features for new users.
+
+Future Considerations (Beyond V1 Launch):
+
+Version Control Integration: Basic Git commands (commit, push/pull if linked to a repo).
+
+Build/Deployment Integration: Tools to prepare the project for deployment to platforms like itch.io, Netlify, etc.
+
+Collaboration: Real-time multi-user editing features.
+
+Visual Editor Elements: Drag-and-drop UI for scene layout or object placement.
+
+Integrated Debugger: Linking the code editor to the preview for step-through debugging.
+
+Support for Other Engines: Adapting preview/asset logic for other frameworks (e.g., Three.js, PixiJS).
+
