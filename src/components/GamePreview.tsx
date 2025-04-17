@@ -95,7 +95,7 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
             window.parent.postMessage({
               type: 'console',
               method: 'error',
-              args: [`Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`]
+              args: ["Error: " + e.message + " at " + e.filename + ":" + e.lineno + ":" + e.colno]
             }, '*');
           });
         })();
@@ -171,7 +171,7 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
                   window.parent.postMessage({
                     type: 'console',
                     method: 'error',
-                    args: [\`Error: \${e.message} at \${e.filename}:\${e.lineno}:\${e.colno}\`]
+                    args: ["Error: " + e.message + " at " + e.filename + ":" + e.lineno + ":" + e.colno]
                   }, '*');
                 });
               })();
