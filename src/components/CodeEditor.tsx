@@ -6,15 +6,22 @@ import { useToast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 
 interface CodeEditorProps {
   code: string;
   isLoading: boolean;
+  activeFilename?: string;
   onCodeChange?: (code: string) => void;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ 
+  code, 
+  isLoading, 
+  activeFilename = 'game.js',
+  onCodeChange 
+}) => {
   const codeRef = useRef(code);
   const { toast } = useToast();
 
@@ -51,15 +58,23 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
     const element = document.createElement('a');
     const file = new Blob([codeRef.current], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = 'gamecode.js';
+    element.download = activeFilename;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
     
     toast({
       title: 'Code downloaded',
-      description: 'Your code has been downloaded as gamecode.js',
+      description: `Your code has been downloaded as ${activeFilename}`,
     });
+  };
+
+  // Choose language extensions based on file type
+  const getLanguageExtension = () => {
+    if (activeFilename.endsWith('.html')) {
+      return html();
+    }
+    return javascript();
   };
 
   if (isLoading) {
@@ -78,7 +93,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
   return (
     <div className="h-full flex flex-col" id="codeEditor">
       <div className="flex items-center justify-between p-2 bg-secondary">
-        <span className="text-sm font-medium">game.js</span>
+        <span className="text-sm font-medium">{activeFilename}</span>
         <div className="flex space-x-2">
           <Button variant="ghost" size="sm" onClick={copyCode} title="Copy code">
             <CopyIcon className="h-4 w-4" />
@@ -94,7 +109,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, isLoading, onCodeChange }
             value={code}
             height="100%"
             theme={oneDark}
-            extensions={[javascript()]}
+            extensions={[getLanguageExtension()]}
             onChange={handleCodeChange}
             basicSetup={{
               lineNumbers: true,

@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import google.generativeai as genai
@@ -64,17 +63,26 @@ def generate_code():
         user_prompt = data['prompt']
         existing_code = data.get('existingCode', '')
         editor_mode = data.get('editorMode', 'general')
+        active_filename = data.get('activeFilename', 'game.js')
         
         print(f"Received prompt: {user_prompt[:100]}...")
         print(f"Existing code length: {len(existing_code)}")
         print(f"Editor mode: {editor_mode}")
+        print(f"Active filename: {active_filename}")
+        
+        # Determine file type for context
+        file_type = "JavaScript"
+        if active_filename.endswith('.html'):
+            file_type = "HTML"
+        elif active_filename.endswith('.css'):
+            file_type = "CSS"
         
         # Create a structured prompt for Gemini that asks for code and explanation
         structured_prompt = f"""
         You are an AI assistant specialized in game development.
         
-        User has the following game code already in their editor:
-        ```javascript
+        User is editing a file named '{active_filename}' which contains {file_type} code:
+        ```
         {existing_code}
         ```
         
@@ -90,6 +98,17 @@ def generate_code():
             
             When providing code, use Phaser 3 best practices and patterns.
             """
+            
+            # Add specific context based on the file being edited
+            if active_filename == 'index.html':
+                structured_prompt += """
+                For the HTML file, make sure it includes proper script tags for Phaser and the game JavaScript file.
+                The HTML should set up a container for the Phaser game with appropriate styling.
+                """
+            elif active_filename == 'game.js':
+                structured_prompt += """
+                For the game.js file, focus on the Phaser game code - configuration, scene management, and game logic.
+                """
         
         structured_prompt += """
         Provide a detailed explanation of the changes needed including code examples. 

@@ -1,127 +1,206 @@
 
-import React, { useRef, useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { PlayIcon, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useRef, useEffect } from 'react';
 import { Asset } from './AssetManager';
 
 interface GamePreviewProps {
   code: string;
+  htmlTemplate?: string;
   assets: Asset[];
 }
 
-const GamePreview: React.FC<GamePreviewProps> = ({ code, assets }) => {
+const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const generateHTMLContent = () => {
-    // Create asset preload code
-    const assetPreloadCode = assets.map(asset => {
-      const extension = asset.name.split('.').pop()?.toLowerCase() || '';
-      const safeKey = asset.name.replace(/[^a-zA-Z0-9_]/g, '_');
+  // Function to safely inject code into the iframe
+  const injectCode = () => {
+    if (!iframeRef.current) return;
+    
+    const iframe = iframeRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    
+    if (!doc) return;
+    
+    // If we have an HTML template, use it
+    if (htmlTemplate) {
+      // Parse the HTML template to extract the head and body content
+      const parser = new DOMParser();
+      const htmlDoc = parser.parseFromString(htmlTemplate, 'text/html');
       
-      if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
-        return `this.load.image('${safeKey}', '${asset.url}');`;
-      } else if (['mp3', 'ogg', 'wav'].includes(extension)) {
-        return `this.load.audio('${safeKey}', '${asset.url}');`;
-      } else if (['json'].includes(extension)) {
-        return `this.load.tilemapTiledJSON('${safeKey}', '${asset.url}');`;
-      } else {
-        return `// Unsupported file type: ${asset.name}`;
-      }
-    }).join('\n      ');
-
-    // Extract existing preload content
-    const preloadRegex = /preload\s*\(\s*\)\s*{([\s\S]*?)}/s;
-    const preloadMatch = code.match(preloadRegex);
-    const existingPreloadContent = preloadMatch ? preloadMatch[1].trim() : '';
-
-    // Create modified code with combined preload content
-    let modifiedCode = code;
-    if (preloadMatch) {
-      const newPreloadFunction = `
-    preload() {
-      // Auto-injected asset loading
-      ${assetPreloadCode}
-      // Original preload code
-      ${existingPreloadContent}
-    }`;
-      modifiedCode = code.replace(preloadRegex, newPreloadFunction);
+      // Clear and set new content
+      doc.open();
+      doc.write(htmlTemplate);
+      
+      // Inject the game code by replacing the script tag with game.js src
+      const scripts = doc.querySelectorAll('script');
+      scripts.forEach(script => {
+        if (script.getAttribute('src') === 'game.js') {
+          // Create a new script element with the game code
+          const newScript = doc.createElement('script');
+          newScript.textContent = code;
+          script.parentNode?.replaceChild(newScript, script);
+        }
+      });
+      
+      // Add additional script to capture console logs
+      const consoleLogScript = doc.createElement('script');
+      consoleLogScript.textContent = `
+        // Capture console methods
+        (function() {
+          const originalConsole = {
+            log: console.log,
+            warn: console.warn,
+            error: console.error,
+            info: console.info
+          };
+          
+          // Override console methods to send logs to parent
+          console.log = function() {
+            originalConsole.log.apply(console, arguments);
+            window.parent.postMessage({
+              type: 'console',
+              method: 'log',
+              args: Array.from(arguments).map(arg => String(arg))
+            }, '*');
+          };
+          
+          console.warn = function() {
+            originalConsole.warn.apply(console, arguments);
+            window.parent.postMessage({
+              type: 'console',
+              method: 'warn',
+              args: Array.from(arguments).map(arg => String(arg))
+            }, '*');
+          };
+          
+          console.error = function() {
+            originalConsole.error.apply(console, arguments);
+            window.parent.postMessage({
+              type: 'console',
+              method: 'error',
+              args: Array.from(arguments).map(arg => String(arg))
+            }, '*');
+          };
+          
+          console.info = function() {
+            originalConsole.info.apply(console, arguments);
+            window.parent.postMessage({
+              type: 'console',
+              method: 'info',
+              args: Array.from(arguments).map(arg => String(arg))
+            }, '*');
+          };
+          
+          // Report errors
+          window.addEventListener('error', function(e) {
+            window.parent.postMessage({
+              type: 'console',
+              method: 'error',
+              args: [`Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`]
+            }, '*');
+          });
+        })();
+      `;
+      doc.body.appendChild(consoleLogScript);
+      
+      doc.close();
+    } else {
+      // Fallback to simpler approach if no HTML template is provided
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Game Preview</title>
+            <style>
+              body { margin: 0; overflow: hidden; background: #333; }
+              canvas { display: block; margin: 0 auto; }
+            </style>
+            <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+          </head>
+          <body>
+            <script>
+              // Capture console methods
+              (function() {
+                const originalConsole = {
+                  log: console.log,
+                  warn: console.warn,
+                  error: console.error,
+                  info: console.info
+                };
+                
+                // Override console methods to send logs to parent
+                console.log = function() {
+                  originalConsole.log.apply(console, arguments);
+                  window.parent.postMessage({
+                    type: 'console',
+                    method: 'log',
+                    args: Array.from(arguments).map(arg => String(arg))
+                  }, '*');
+                };
+                
+                console.warn = function() {
+                  originalConsole.warn.apply(console, arguments);
+                  window.parent.postMessage({
+                    type: 'console',
+                    method: 'warn',
+                    args: Array.from(arguments).map(arg => String(arg))
+                  }, '*');
+                };
+                
+                console.error = function() {
+                  originalConsole.error.apply(console, arguments);
+                  window.parent.postMessage({
+                    type: 'console',
+                    method: 'error',
+                    args: Array.from(arguments).map(arg => String(arg))
+                  }, '*');
+                };
+                
+                console.info = function() {
+                  originalConsole.info.apply(console, arguments);
+                  window.parent.postMessage({
+                    type: 'console',
+                    method: 'info',
+                    args: Array.from(arguments).map(arg => String(arg))
+                  }, '*');
+                };
+                
+                // Report errors
+                window.addEventListener('error', function(e) {
+                  window.parent.postMessage({
+                    type: 'console',
+                    method: 'error',
+                    args: [\`Error: \${e.message} at \${e.filename}:\${e.lineno}:\${e.colno}\`]
+                  }, '*');
+                });
+              })();
+              
+              ${code}
+            </script>
+          </body>
+        </html>
+      `);
+      doc.close();
     }
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Phaser Game Preview</title>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; background-color: #000; }
-    #phaser-game { width: 100%; height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="phaser-game"></div>
-  <script>
-    try {
-      ${modifiedCode}
-    } catch (error) {
-      console.error('Error in game code:', error);
-      document.body.innerHTML = '<div style="color: #ff5555; background: #330000; border: 1px solid red; padding: 20px; font-family: monospace; white-space: pre-wrap;"><h3>Runtime Error:</h3>' + error.stack + '</div>';
-    }
-  </script>
-</body>
-</html>`;
   };
 
-  const runGame = () => {
-    setIsLoading(true);
-    try {
-      if (iframeRef.current) {
-        const htmlContent = generateHTMLContent();
-        iframeRef.current.srcdoc = htmlContent;
-      }
-      toast({
-        title: "Game started",
-        description: "Your Phaser game is now running",
-      });
-    } catch (error) {
-      console.error("Failed to run game:", error);
-      toast({
-        title: "Failed to run game",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    }
-  };
+  // Update the iframe when the code or assets change
+  useEffect(() => {
+    injectCode();
+  }, [code, htmlTemplate, assets]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-2 bg-secondary">
         <span className="text-sm font-medium">Game Preview</span>
-        <Button 
-          onClick={runGame} 
-          size="sm" 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <PlayIcon className="h-4 w-4 mr-2" />
-          )}
-          Run Game
-        </Button>
       </div>
-      <div className="flex-1 bg-black rounded-md overflow-hidden">
+      <div className="flex-1 bg-slate-800">
         <iframe 
           ref={iframeRef}
-          title="Phaser Game Preview"
-          className="w-full h-full border-none"
+          title="Game Preview"
           sandbox="allow-scripts allow-same-origin"
-          srcDoc='<html><body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#666;font-family:sans-serif;text-align:center;"><div><div style="font-size:24px;margin-bottom:10px;">Phaser 3 Game Preview</div><div>Click "Run Game" to start</div></div></body></html>'
-          onLoad={() => setIsLoading(false)}
+          className="w-full h-full border-0"
         />
       </div>
     </div>

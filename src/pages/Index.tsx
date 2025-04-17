@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Header from '@/components/Header';
@@ -7,18 +8,30 @@ import CodeEditor from '@/components/CodeEditor';
 import ModeSelector, { EditorMode } from '@/components/ModeSelector';
 import GamePreview from '@/components/GamePreview';
 import AssetManager, { Asset } from '@/components/AssetManager';
+import FileTabs from '@/components/FileTabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
 
+// Updated ProjectSaveState interface
+const updateProjectSaveState = () => {
+  // This is just here to make sure the code compiles, but the interface is updated in the types file
+};
+
 const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiExplanation, setAiExplanation] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
   const [editorMode, setEditorMode] = useState<EditorMode>('general');
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
+
+  // New state for multi-file support
+  const [files, setFiles] = useState<{ [filename: string]: string }>({
+    'game.js': '// Basic JavaScript code\nconsole.log("Hello from game.js!");',
+    'index.html': '<!DOCTYPE html>\n<html>\n<head>\n  <title>Game</title>\n  <style>body { margin: 0; }</style>\n</head>\n<body>\n  <div id="game-container"></div>\n  <script src="game.js"></script>\n</body>\n</html>'
+  });
+  const [activeFilename, setActiveFilename] = useState<string>('game.js');
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -53,8 +66,9 @@ const Index = () => {
         },
         body: JSON.stringify({ 
           prompt,
-          existingCode: generatedCode, // Send existing code to the backend
-          editorMode: editorMode // Send the current editor mode
+          existingCode: files[activeFilename], // Send active file content
+          activeFilename,  // Send the active filename
+          editorMode // Send the current editor mode
         }),
       });
       
@@ -94,16 +108,21 @@ const Index = () => {
 
   // Handle code updates from the editor
   const handleCodeChange = (newCode: string) => {
-    setGeneratedCode(newCode);
+    setFiles(prevFiles => ({
+      ...prevFiles,
+      [activeFilename]: newCode // Update only the active file
+    }));
   };
 
   // Handle mode switching
   const handleModeChange = (mode: EditorMode) => {
     setEditorMode(mode);
     
-    if (mode === 'phaser' && generatedCode === '') {
+    if (mode === 'phaser' && files['game.js'] === '// Basic JavaScript code\nconsole.log("Hello from game.js!");') {
       // Provide starter template for Phaser if code is empty
-      setGeneratedCode(`// Basic Phaser 3 Game Template
+      setFiles(prevFiles => ({
+        ...prevFiles,
+        'game.js': `// Basic Phaser 3 Game Template
 const config = {
   type: Phaser.AUTO,
   width: 800,
@@ -136,7 +155,25 @@ function create() {
 function update() {
   // Update game logic here
 }
-`);
+`,
+        'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phaser Game</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+    #game-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script src="game.js"></script>
+</body>
+</html>`
+      }));
     }
 
     toast({
@@ -151,7 +188,9 @@ function update() {
     const projectData: ProjectSaveState = {
       version: 1,
       editorMode,
-      generatedCode,
+      generatedCode: files[activeFilename], // For backward compatibility
+      files, // New field for multi-file support
+      activeFilename, // Save the active filename
       assets,
     };
     
@@ -166,7 +205,20 @@ function update() {
     try {
       const projectData = await loadProjectFromFile();
       setEditorMode(projectData.editorMode);
-      setGeneratedCode(projectData.generatedCode);
+      
+      // Handle both new multi-file format and old single-file format
+      if (projectData.files) {
+        setFiles(projectData.files);
+      } else if (projectData.generatedCode) {
+        // Legacy support - put the single file content into game.js
+        setFiles({
+          'game.js': projectData.generatedCode,
+          'index.html': '<!DOCTYPE html>\n<html>\n<head>\n  <title>Game</title>\n  <style>body { margin: 0; }</style>\n</head>\n<body>\n  <div id="game-container"></div>\n  <script src="game.js"></script>\n</body>\n</html>'
+        });
+      }
+      
+      // Set the active filename if it exists, otherwise default to game.js
+      setActiveFilename(projectData.activeFilename || 'game.js');
       setAssets(projectData.assets);
       
       toast({
@@ -213,7 +265,8 @@ function update() {
                   {/* Game Preview */}
                   <ResizablePanel defaultSize={60} minSize={30}>
                     <GamePreview 
-                      code={generatedCode} 
+                      code={files['game.js']} 
+                      htmlTemplate={files['index.html']}
                       assets={assets}
                     />
                   </ResizablePanel>
@@ -234,10 +287,16 @@ function update() {
             </>
           )}
           
-          {/* Right panel - Code editor */}
-          <ResizablePanel defaultSize={editorMode === 'phaser' ? 30 : 70} minSize={20}>
+          {/* Right panel - File tabs and code editor */}
+          <ResizablePanel defaultSize={editorMode === 'phaser' ? 30 : 70} minSize={20} className="flex flex-col">
+            <FileTabs 
+              filenames={Object.keys(files)} 
+              activeFilename={activeFilename} 
+              onSelectFile={setActiveFilename} 
+            />
             <CodeEditor 
-              code={generatedCode} 
+              code={files[activeFilename]} 
+              activeFilename={activeFilename}
               isLoading={isProcessing} 
               onCodeChange={handleCodeChange}
             />
