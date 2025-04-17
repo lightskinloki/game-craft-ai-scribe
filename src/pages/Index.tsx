@@ -9,6 +9,8 @@ import GamePreview from '@/components/GamePreview';
 import AssetManager, { Asset } from '@/components/AssetManager';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
+import type { ProjectSaveState } from '@/types/project';
 
 const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -145,9 +147,40 @@ function update() {
     });
   };
 
+  const handleSaveProject = async () => {
+    const projectData: ProjectSaveState = {
+      version: 1,
+      editorMode,
+      generatedCode,
+      assets,
+    };
+    
+    try {
+      await saveProjectToFile(projectData);
+    } catch (error) {
+      console.error('Save project error:', error);
+    }
+  };
+
+  const handleLoadProject = async () => {
+    try {
+      const projectData = await loadProjectFromFile();
+      setEditorMode(projectData.editorMode);
+      setGeneratedCode(projectData.generatedCode);
+      setAssets(projectData.assets);
+      
+      toast({
+        title: "Project Loaded",
+        description: "Your project has been loaded successfully",
+      });
+    } catch (error) {
+      console.error('Load project error:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header />
+      <Header onSaveProject={handleSaveProject} onLoadProject={handleLoadProject} />
       <div className="absolute top-0 right-4 h-16 flex items-center">
         <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
       </div>
