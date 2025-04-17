@@ -8,7 +8,7 @@ export async function saveProjectToFile(projectData: ProjectSaveState) {
 
   try {
     if ('showSaveFilePicker' in window) {
-      const handle = await window.showSaveFilePicker({
+      const handle = await (window as Window).showSaveFilePicker({
         suggestedName: filename,
         types: [{
           description: 'GameCraft Project',
@@ -50,7 +50,7 @@ export async function loadProjectFromFile(): Promise<ProjectSaveState> {
     let fileContent: string;
     
     if ('showOpenFilePicker' in window) {
-      const [handle] = await window.showOpenFilePicker({
+      const [handle] = await (window as Window).showOpenFilePicker({
         types: [{
           description: 'GameCraft Project',
           accept: { 'application/json': ['.gcai', '.json'] }
