@@ -180,9 +180,15 @@ function update() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header onSaveProject={handleSaveProject} onLoadProject={handleLoadProject} />
-      <div className="absolute top-0 right-4 h-16 flex items-center">
-        <ModeSelector currentMode={editorMode} onModeChange={handleModeChange} />
+      <Header 
+        onSaveProject={handleSaveProject} 
+        onLoadProject={handleLoadProject} 
+      />
+      <div className="flex justify-end px-4 py-2">
+        <ModeSelector 
+          currentMode={editorMode} 
+          onModeChange={handleModeChange} 
+        />
       </div>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
