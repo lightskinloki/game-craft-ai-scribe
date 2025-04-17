@@ -8,7 +8,7 @@ Focus: Address critical usability gaps, enhance the core debugging experience, a
 
 Key Features:
 
-Project Saving & Loading (Local):
+Project Saving & Loading (Local): DONE
 
 Implement functionality to save the current project state (code in editor, asset list, editor mode) to a local file (e.g., a single .json or a structured format).
 
@@ -16,7 +16,7 @@ Implement functionality to load a previously saved project file.
 
 (Consider using the browser's File System Access API for a smoother experience).
 
-Basic Multi-File Support:
+Basic Multi-File Support: DONE
 
 Introduce a simple file tree/tab UI panel.
 
@@ -26,7 +26,7 @@ Update the backend /generate call to potentially send context from the currently
 
 Update the CodeEditor to display the content of the active file.
 
-Phaser Console Log Access:
+Phaser Console Log Access: DONE
 
 Modify GamePreview.tsx's iframe script to capture console.log, console.warn, console.error messages.
 
