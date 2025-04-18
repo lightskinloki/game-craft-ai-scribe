@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
 import ConsoleOutput, { LogEntry } from '@/components/ConsoleOutput';
+import JSZip from 'jszip';
 
 // Updated ProjectSaveState interface
 const updateProjectSaveState = () => {
@@ -233,6 +234,105 @@ function update() {
     }
   };
 
+  // New function for exporting the project as a ZIP
+  const handleExportProject = async () => {
+    // Show loading toast
+    toast({
+      title: "Exporting Project",
+      description: "Preparing your project files and assets for download...",
+    });
+
+    try {
+      // Create a new JSZip instance
+      const zip = new JSZip();
+      
+      // Add code files to the zip
+      Object.entries(files).forEach(([filename, content]) => {
+        zip.file(filename, content);
+      });
+      
+      // Create assets folder in the zip
+      const assetsFolder = zip.folder("assets");
+      if (!assetsFolder) {
+        throw new Error("Failed to create assets folder in ZIP");
+      }
+      
+      // Fetch all assets and add them to the zip
+      const assetFetchPromises = assets.map(async (asset) => {
+        try {
+          const response = await fetch(asset.url);
+          
+          if (!response.ok) {
+            console.warn(`Failed to fetch asset: ${asset.name} (${response.status} ${response.statusText})`);
+            return { name: asset.name, error: true };
+          }
+          
+          const blob = await response.blob();
+          return { name: asset.name, blob, error: false };
+        } catch (error) {
+          console.error(`Error fetching asset: ${asset.name}`, error);
+          return { name: asset.name, error: true };
+        }
+      });
+      
+      // Wait for all asset fetch operations to complete
+      const assetResults = await Promise.allSettled(assetFetchPromises);
+      
+      // Track skipped assets for user feedback
+      const skippedAssets: string[] = [];
+      
+      // Process the results and add successful fetches to the zip
+      assetResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const assetResult = result.value;
+          
+          if (!assetResult.error && assetResult.blob) {
+            assetsFolder.file(assetResult.name, assetResult.blob);
+          } else {
+            skippedAssets.push(assetResult.name);
+          }
+        } else {
+          console.error('Asset promise rejected:', result.reason);
+          // We don't have the asset name here, but we track that an error occurred
+          skippedAssets.push('Unknown asset');
+        }
+      });
+      
+      // Generate the zip file as a blob
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      
+      // Create a download link and trigger the download
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(zipBlob);
+      downloadLink.download = "gamecraft-project.zip";
+      downloadLink.click();
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(downloadLink.href);
+      
+      // Show success toast with info about skipped assets if any
+      toast({
+        title: "Project Exported Successfully",
+        description: skippedAssets.length > 0 
+          ? `Download complete. Note: ${skippedAssets.length} asset(s) could not be included.` 
+          : "Your project has been downloaded as a ZIP file.",
+      });
+      
+      // Note for console about relative paths
+      console.info(
+        "Note: The exported HTML file references assets using absolute URLs. " +
+        "You may need to update the paths in the code after unzipping for it to load the embedded assets correctly."
+      );
+    } catch (error) {
+      console.error('Error exporting project:', error);
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export project. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle console messages from the iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -258,7 +358,8 @@ function update() {
     <div className="flex flex-col h-screen bg-background">
       <Header 
         onSaveProject={handleSaveProject} 
-        onLoadProject={handleLoadProject} 
+        onLoadProject={handleLoadProject}
+        onExportProject={handleExportProject}
       />
       <div className="flex justify-end px-4 py-2">
         <ModeSelector 

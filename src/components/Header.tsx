@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { Code, Sparkles, Save, FolderOpen } from 'lucide-react';
+import { Code, Sparkles, Save, FolderOpen, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onSaveProject: () => Promise<void>;
   onLoadProject: () => Promise<void>;
+  onExportProject: () => Promise<void>;
 }
 
-const Header = ({ onSaveProject, onLoadProject }: HeaderProps) => {
+const Header = ({ onSaveProject, onLoadProject, onExportProject }: HeaderProps) => {
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary">
       <div className="flex items-center space-x-2">
@@ -33,6 +34,15 @@ const Header = ({ onSaveProject, onLoadProject }: HeaderProps) => {
         >
           <FolderOpen className="h-4 w-4" />
           Load Project
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={onExportProject}
+        >
+          <Download className="h-4 w-4" />
+          Export Project
         </Button>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">Powered by</span>
