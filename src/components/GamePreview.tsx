@@ -1,5 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+
+import React, { useRef, useState } from 'react';
 import { Asset } from './AssetManager';
+import { Button } from './ui/button';
+import { PlayIcon, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface GamePreviewProps {
   code: string;
@@ -9,15 +13,21 @@ interface GamePreviewProps {
 
 const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Function to safely inject code into the iframe
-  const injectCode = () => {
-    if (!iframeRef.current) return;
+  // Function to safely generate and inject code into the iframe
+  const generateAndInjectHTML = () => {
+    if (!iframeRef.current) {
+      throw new Error("Iframe reference not available");
+    }
     
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     
-    if (!doc) return;
+    if (!doc) {
+      throw new Error("Could not access iframe document");
+    }
     
     // If we have an HTML template, use it
     if (htmlTemplate) {
@@ -216,15 +226,45 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
     }
   };
 
-  // Update the iframe when the code or assets change
-  useEffect(() => {
-    injectCode();
-  }, [code, htmlTemplate, assets]);
+  // Manual run game function
+  const runGame = () => {
+    console.log("Run Game clicked");
+    setIsLoading(true);
+    
+    try {
+      generateAndInjectHTML();
+      toast({
+        title: "Updating Preview",
+        description: "Loading your game code...",
+      });
+    } catch (error) {
+      console.error("Failed to prepare game preview:", error);
+      toast({
+        title: "Preview Error",
+        description: error instanceof Error ? error.message : "Failed to update preview",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-2 bg-secondary">
         <span className="text-sm font-medium">Game Preview</span>
+        <Button
+          onClick={runGame}
+          size="sm"
+          disabled={isLoading}
+          className="gap-1"
+        >
+          {isLoading ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <PlayIcon className="h-4 w-4" />
+          )}
+          Run
+        </Button>
       </div>
       <div className="flex-1 bg-slate-800">
         <iframe 
@@ -232,6 +272,10 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
           title="Game Preview"
           sandbox="allow-scripts allow-same-origin"
           className="w-full h-full border-0"
+          onLoad={() => {
+            console.log("Iframe finished loading");
+            setIsLoading(false);
+          }}
         />
       </div>
     </div>
