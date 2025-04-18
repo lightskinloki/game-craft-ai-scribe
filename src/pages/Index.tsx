@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import Header from '@/components/Header';
 import PromptInput from '@/components/PromptInput';
 import AiOutput from '@/components/AiOutput';
@@ -8,7 +10,6 @@ import ModeSelector, { EditorMode } from '@/components/ModeSelector';
 import GamePreview from '@/components/GamePreview';
 import AssetManager, { Asset } from '@/components/AssetManager';
 import FileTabs from '@/components/FileTabs';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
@@ -24,6 +25,7 @@ const Index = () => {
   const [aiExplanation, setAiExplanation] = useState('');
   const [editorMode, setEditorMode] = useState<EditorMode>('general');
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [activeMiddleTab, setActiveMiddleTab] = useState<'preview' | 'console' | 'assets'>('preview');
   const { toast } = useToast();
 
   // New state for multi-file support
@@ -279,37 +281,37 @@ function update() {
           
           <ResizableHandle withHandle />
           
-          {/* Middle panel - Game preview, console output and asset manager */}
+          {/* Middle panel with tabs for Phaser mode */}
           {editorMode === 'phaser' && (
             <>
               <ResizablePanel defaultSize={40} minSize={20}>
-                <ResizablePanelGroup direction="vertical">
-                  {/* Game Preview */}
-                  <ResizablePanel defaultSize={50} minSize={30}>
+                <Tabs
+                  value={activeMiddleTab}
+                  onValueChange={(value) => setActiveMiddleTab(value as 'preview' | 'console' | 'assets')}
+                  className="h-full flex flex-col"
+                >
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                    <TabsTrigger value="console">Console</TabsTrigger>
+                    <TabsTrigger value="assets">Assets</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="preview" className="flex-1 mt-0">
                     <GamePreview 
                       code={files['game.js']} 
                       htmlTemplate={files['index.html']}
                       assets={assets}
                     />
-                  </ResizablePanel>
-                  
-                  <ResizableHandle withHandle />
-                  
-                  {/* Console Output */}
-                  <ResizablePanel defaultSize={25} minSize={20}>
+                  </TabsContent>
+                  <TabsContent value="console" className="flex-1 mt-0">
                     <ConsoleOutput logs={logs} onClearLogs={handleClearLogs} />
-                  </ResizablePanel>
-                  
-                  <ResizableHandle withHandle />
-                  
-                  {/* Asset Manager */}
-                  <ResizablePanel defaultSize={25} minSize={20}>
+                  </TabsContent>
+                  <TabsContent value="assets" className="flex-1 mt-0">
                     <AssetManager 
                       assets={assets}
                       onAssetsChange={setAssets}
                     />
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                  </TabsContent>
+                </Tabs>
               </ResizablePanel>
               
               <ResizableHandle withHandle />
