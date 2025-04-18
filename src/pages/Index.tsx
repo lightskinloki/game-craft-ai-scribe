@@ -281,37 +281,34 @@ function update() {
           
           <ResizableHandle withHandle />
           
-          {/* Middle panel with tabs for Phaser mode */}
+          {/* Middle panel with vertical stack for Phaser mode */}
           {editorMode === 'phaser' && (
             <>
               <ResizablePanel defaultSize={40} minSize={20}>
-                <Tabs
-                  value={activeMiddleTab}
-                  onValueChange={(value) => setActiveMiddleTab(value as 'preview' | 'console' | 'assets')}
-                  className="h-full flex flex-col"
-                >
-                  <TabsList className="w-full grid grid-cols-3">
-                    <TabsTrigger value="preview">Preview</TabsTrigger>
-                    <TabsTrigger value="console">Console</TabsTrigger>
-                    <TabsTrigger value="assets">Assets</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="preview" className="flex-1 mt-0">
+                <ResizablePanelGroup direction="vertical">
+                  <ResizablePanel defaultSize={60}>
                     <GamePreview 
                       code={files['game.js']} 
                       htmlTemplate={files['index.html']}
                       assets={assets}
                     />
-                  </TabsContent>
-                  <TabsContent value="console" className="flex-1 mt-0">
+                  </ResizablePanel>
+                  
+                  <ResizableHandle withHandle />
+                  
+                  <ResizablePanel defaultSize={25}>
                     <ConsoleOutput logs={logs} onClearLogs={handleClearLogs} />
-                  </TabsContent>
-                  <TabsContent value="assets" className="flex-1 mt-0">
+                  </ResizablePanel>
+                  
+                  <ResizableHandle withHandle />
+                  
+                  <ResizablePanel defaultSize={15}>
                     <AssetManager 
                       assets={assets}
                       onAssetsChange={setAssets}
                     />
-                  </TabsContent>
-                </Tabs>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
               </ResizablePanel>
               
               <ResizableHandle withHandle />
