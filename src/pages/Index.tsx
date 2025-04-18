@@ -385,9 +385,13 @@ function update() {
           {/* Middle panel with vertical stack for Phaser mode */}
           {editorMode === 'phaser' && (
             <>
-              <ResizablePanel defaultSize={40} minSize={20}>
+              <ResizablePanel defaultSize={40} minSize={30} maxSize={70}>
                 <ResizablePanelGroup direction="vertical">
-                  <ResizablePanel defaultSize={60}>
+                  <ResizablePanel 
+                    defaultSize={60}
+                    minSize={20}
+                    maxSize={70}
+                  >
                     <GamePreview 
                       code={files['game.js']} 
                       htmlTemplate={files['index.html']}
@@ -397,13 +401,21 @@ function update() {
                   
                   <ResizableHandle withHandle />
                   
-                  <ResizablePanel defaultSize={25}>
+                  <ResizablePanel
+                    defaultSize={25}
+                    minSize={15}
+                    maxSize={50}
+                  >
                     <ConsoleOutput logs={logs} onClearLogs={handleClearLogs} />
                   </ResizablePanel>
                   
                   <ResizableHandle withHandle />
                   
-                  <ResizablePanel defaultSize={15}>
+                  <ResizablePanel
+                    defaultSize={15}
+                    minSize={15}
+                    maxSize={40}
+                  >
                     <AssetManager 
                       assets={assets}
                       onAssetsChange={setAssets}
@@ -417,7 +429,12 @@ function update() {
           )}
           
           {/* Right panel - editor */}
-          <ResizablePanel defaultSize={editorMode === 'phaser' ? 30 : 70} minSize={20} className="flex flex-col">
+          <ResizablePanel 
+            defaultSize={editorMode === 'phaser' ? 30 : 70} 
+            minSize={20} 
+            maxSize={70}
+            className="flex flex-col"
+          >
             <FileTabs 
               filenames={Object.keys(files)} 
               activeFilename={activeFilename} 
