@@ -1,44 +1,46 @@
-GameCraft AI Scribe - Updated Development Roadmap
+GameCraft AI Scribe - Updated Development Roadmap (v6 - Incorporating Priorities)
 
-Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users.
+Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users, encompassing a wide range of developer aids and learning tools.
 
-Phase 1: Core Enhancements & Stability (Nearing Completion)
+✅ Phase 1: Core Enhancements & Stability (Functionally Complete)
 
-Focus: Address critical usability gaps, enhance the core debugging experience, and ensure a stable foundation.
+Focus: Address critical usability gaps, enhance core debugging, ensure stability, complete basic I/O.
 
-Status: Core features implemented. Focus shifts to ensuring the new reactive preview works well and implementing remaining Phase 1 items.
+Status: Core features implemented. Final polish/bug-fixing needed.
 
-Key Features:
+Key Features Implemented: Local Project Save/Load, Basic Multi-File Support, Phaser Console Log Access, Auto Game Preview, Basic Project Export.
 
-✅ Project Saving & Loading (Local): DONE
+Remaining Tasks:
 
-✅ Basic Multi-File Support (game.js, index.html)
+🔄 UI Polish & Bug Fixing: IMMEDIATE FOCUS (Fix Layouts, Improve Load States, Optional Launch Button).
 
-✅ Phaser Console Log Access: DONE
+Phase 2: AI Precision, Learning Aids & Workflow
 
-✅ Game Preview - Automatic Update: DONE (Implemented via useEffect in GamePreview.tsx. Replaced manual "Run Game" button).
+Focus: Enhance the core AI interaction quality, add learning tools, improve developer productivity.
 
-🔄 UI Polish & Bug Fixing: IN PROGRESS / NEXT FOCUS
+Prioritized Features:
 
-Evaluate Auto-Preview Performance & UX: Test if the automatic preview refresh is smooth and responsive, or if it feels laggy/disruptive during rapid typing. Consider if an optional manual refresh/run button might still be desirable for some users or complex projects (could be added later in Phase 2 if needed).
+⭐ "Explain Like I'm 5" (ELI5) Mode: (High Priority)
 
-Address other known layout issues, component glitches, or inconsistencies (especially around the new Tabbed layout if implemented).
+Implement UI toggle.
 
-Improve loading states and user feedback (e.g., during AI processing, file saving/loading).
+Implement backend prompt modification.
 
-Implement the simple "Launch Application" button (Header) - Lower priority.
+⭐ AI Line Number Awareness: (High Priority - Requires careful testing)
 
-⏳ Basic Project Export: PENDING
+Implement frontend preprocessing in handlePromptSubmit to add NNN: prefixes to code sent to backend.
 
-Add "Export Project" button.
+Update backend structured_prompt to instruct AI on using/omitting these prefixes.
 
-Implement ZIP creation (code files + assets).
+Thoroughly test impact on AI output quality and potential token usage issues.
 
-Phase 2: Feature Deepening & Workflow Improvements
+⭐ Project Templates (incl. Minecraft Clone Tutorial): (High Priority)
 
-Focus: Build upon the stable core by enhancing the editor, asset management, and AI interaction.
+Develop the actual code content for the template(s).
 
-Key Features: (Priority within Phase 2 can be adjusted)
+Implement template selection UI.
+
+Implement logic in Index.tsx to load selected template into files state.
 
 Editor Enhancements:
 
@@ -46,11 +48,17 @@ Linting (ESLint Integration).
 
 Formatting (Prettier Integration).
 
-AI Conversation History:
+Code Snippet Library (Local Storage):
 
-Implement session-based history panel.
+Implement snippet management UI/logic.
 
-(Optional: Context sending).
+Implement editor insertion.
+
+Use localStorage.
+
+Integrated Phaser Documentation Search:
+
+Implement docs search UI/logic.
 
 Asset Manager Improvements:
 
@@ -58,54 +66,32 @@ Display image thumbnails.
 
 (Optional: Paired asset handling).
 
-Project Templates:
-
-Define & implement basic templates.
-
 Persistent Settings:
 
-Use localStorage for theme, mode, layout sizes.
+Use localStorage for various UI/mode states.
 
-Phase 3: Polish, Sharing & Advanced Features
+Basic Performance Monitoring:
 
-Focus: Refine UX, explore sharing/deployment, add advanced AI capabilities. (Further out)
+Display simple FPS counter.
 
-Key Features:
+Phase 3: Advanced AI, Polish & Sharing Foundations (Further Out)
 
-Advanced Editor Features: (Search/Replace, Phaser Autocompletion).
+Focus: Refine UX, add more sophisticated AI interactions, improve code quality tools, lay groundwork for online features.
 
-Cloud Saving & User Accounts: (Significant undertaking).
+Key Features: AI Conversation History, Advanced Editor (Search/Replace, Autocomplete), Contextual AI Prompts/Refactoring, AI Tutorials, Onboarding, Cloud Saving/Accounts, Sharing, Template Sharing.
 
-Simple Project Sharing: (Requires cloud saving).
+Future Considerations / Phase X: Advanced & Experimental Features (Long Term)
 
-Contextual AI Prompts: ("Refactor this", "Explain function").
+Focus: Explore cutting-edge integrations, highly complex features, community aspects, specialized tooling.
 
-Enhanced Onboarding/Tutorial.
+Key Features: Full AI Game Creation (Planner/Executor/Checker), AI Tilemap Editor, Version Control, Build/Deploy Tools, Collaboration, State Machine Viz, Accessibility Checker, Visual Editors, Debugger, Other Engines.
 
-Future Considerations / Phase X: Advanced & Experimental Features
+Updated Next Steps:
 
-Focus: Explore cutting-edge integrations once the core app is mature.
+Complete Phase 1 Polish & Bug Fixing: Ensure the current feature set is stable and usable.
 
-Key Features:
+Implement ELI5 Mode: Relatively straightforward start to Phase 2.
 
-AI-Assisted Tilemap Editor (Experimental / Long-Term).
+Implement AI Line Number Awareness: Tackle this next due to its impact on AI interaction quality. 
 
-Version Control Integration.
-
-Build/Deployment Integration.
-
-Collaboration Features.
-
-Visual Editor Elements.
-
-Integrated Debugger.
-
-Support for Other Engines.
-
-Revised Immediate Next Steps:
-
-Verify & Evaluate Auto-Preview: Thoroughly test the automatic preview update. Does it work reliably? Is it performant enough? Does it feel good to use while coding? Address any bugs specifically related to this reactive update.
-
-Implement Basic Project Export: This is the last major feature planned for Phase 1.
-
-General UI Polish/Bug Fixing: Address any other smaller issues, refine the layout (especially the tabbed middle panel if you implemented it), and improve loading indicators.
+Develop Minecraft Clone Template & Implement Template Feature: Work on the template content and the loading mechanism concurrently or sequentially.
