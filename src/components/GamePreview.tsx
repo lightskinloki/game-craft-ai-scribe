@@ -6,12 +6,11 @@ import { PlayIcon, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface GamePreviewProps {
-  code: string;
-  htmlTemplate?: string;
+  files: { [filename: string]: string };
   assets: Asset[];
 }
 
-const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets }) => {
+const GamePreview: React.FC<GamePreviewProps> = ({ files, assets }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -29,7 +28,9 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
       throw new Error("Could not access iframe document");
     }
     
-    // If we have an HTML template, use it
+    // Use the HTML template if available, otherwise use default
+    const htmlTemplate = files['index.html'] || '';
+    
     if (htmlTemplate) {
       // Parse the HTML template to extract the head and body content
       const parser = new DOMParser();
@@ -39,18 +40,40 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
       doc.open();
       doc.write(htmlTemplate);
       
-      // Inject the game code by replacing the script tag with game.js src
-      const scripts = doc.querySelectorAll('script');
+      // Gather all JavaScript files
+      const jsFiles = Object.entries(files).filter(([filename]) => filename.endsWith('.js'));
+      
+      // Find script tags with src attributes in the document
+      const scripts = Array.from(doc.querySelectorAll('script[src]'));
+      
+      // Find the first script tag with game.js source or create insertion point
+      let scriptInsertionPoint: HTMLElement | null = null;
+      
+      // Try to find the game.js script tag to use as insertion point
       scripts.forEach(script => {
-        if (script.getAttribute('src') === 'game.js') {
-          // Create a new script element with the game code
-          const newScript = doc.createElement('script');
-          newScript.textContent = code;
-          script.parentNode?.replaceChild(newScript, script);
+        const src = script.getAttribute('src');
+        if (src === 'game.js' || src?.includes('game.js')) {
+          scriptInsertionPoint = script.parentElement;
+          script.remove(); // Remove the original script tag
         }
       });
       
-      // Add additional script to capture console logs
+      // If no insertion point found, use body
+      if (!scriptInsertionPoint && doc.body) {
+        scriptInsertionPoint = doc.body;
+      }
+      
+      // Add all JavaScript files as separate script tags
+      if (scriptInsertionPoint) {
+        jsFiles.forEach(([filename, code]) => {
+          const script = doc.createElement('script');
+          script.textContent = code;
+          script.setAttribute('data-filename', filename);
+          scriptInsertionPoint?.appendChild(script);
+        });
+      }
+      
+      // Add console logging capture script
       const consoleLogScript = doc.createElement('script');
       consoleLogScript.textContent = `
         // Capture console methods
@@ -216,9 +239,12 @@ const GamePreview: React.FC<GamePreviewProps> = ({ code, htmlTemplate, assets })
                   }, '*');
                 });
               })();
-              
-              ${code}
             </script>
+            ${Object.entries(files)
+              .filter(([filename]) => filename.endsWith('.js'))
+              .map(([filename, code]) => 
+                `<script data-filename="${filename}">${code}</script>`
+              ).join('\n')}
           </body>
         </html>
       `);

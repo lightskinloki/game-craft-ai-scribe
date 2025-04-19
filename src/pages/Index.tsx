@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/components/Header';
 import PromptInput from '@/components/PromptInput';
@@ -9,7 +9,7 @@ import CodeEditor from '@/components/CodeEditor';
 import ModeSelector, { EditorMode } from '@/components/ModeSelector';
 import GamePreview from '@/components/GamePreview';
 import AssetManager, { Asset } from '@/components/AssetManager';
-import FileTabs from '@/components/FileTabs';
+import FileExplorer from '@/components/FileExplorer';
 import { useToast } from '@/components/ui/use-toast';
 import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
@@ -26,10 +26,9 @@ const Index = () => {
   const [aiExplanation, setAiExplanation] = useState('');
   const [editorMode, setEditorMode] = useState<EditorMode>('general');
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [activeMiddleTab, setActiveMiddleTab] = useState<'preview' | 'console' | 'assets'>('preview');
   const { toast } = useToast();
 
-  // New state for multi-file support
+  // State for multi-file support
   const [files, setFiles] = useState<{ [filename: string]: string }>({
     'game.js': '// Basic JavaScript code\nconsole.log("Hello from game.js!");',
     'index.html': '<!DOCTYPE html>\n<html>\n<head>\n  <title>Game</title>\n  <style>body { margin: 0; }</style>\n</head>\n<body>\n  <div id="game-container"></div>\n  <script src="game.js"></script>\n</body>\n</html>'
@@ -116,6 +115,46 @@ const Index = () => {
       ...prevFiles,
       [activeFilename]: newCode // Update only the active file
     }));
+  };
+
+  // New function to create a file
+  const handleCreateFile = (filename: string) => {
+    // Basic validation
+    if (!filename.trim() || files[filename]) {
+      return;
+    }
+
+    // Create the file with default content
+    setFiles(prevFiles => ({
+      ...prevFiles,
+      [filename]: `// New file: ${filename}\n`
+    }));
+
+    // Set the new file as active
+    setActiveFilename(filename);
+  };
+
+  // New function to delete a file
+  const handleDeleteFile = (filename: string) => {
+    // Don't allow deleting index.html
+    if (filename === 'index.html') {
+      toast({
+        title: "Cannot Delete",
+        description: "The index.html file cannot be deleted",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create a new files object without the deleted file
+    const newFiles = { ...files };
+    delete newFiles[filename];
+    setFiles(newFiles);
+
+    // If the deleted file was active, switch to game.js or index.html
+    if (activeFilename === filename) {
+      setActiveFilename(newFiles['game.js'] ? 'game.js' : 'index.html');
+    }
   };
 
   // Handle mode switching
@@ -234,7 +273,7 @@ function update() {
     }
   };
 
-  // New function for exporting the project as a ZIP
+  // Function for exporting the project as a ZIP
   const handleExportProject = async () => {
     // Show loading toast
     toast({
@@ -389,12 +428,11 @@ function update() {
                 <ResizablePanelGroup direction="vertical">
                   <ResizablePanel 
                     defaultSize={60}
-                    minSize={20}
+                    minSize={25}
                     maxSize={70}
                   >
                     <GamePreview 
-                      code={files['game.js']} 
-                      htmlTemplate={files['index.html']}
+                      files={files}
                       assets={assets}
                     />
                   </ResizablePanel>
@@ -403,7 +441,7 @@ function update() {
                   
                   <ResizablePanel
                     defaultSize={25}
-                    minSize={15}
+                    minSize={20}
                     maxSize={50}
                   >
                     <ConsoleOutput logs={logs} onClearLogs={handleClearLogs} />
@@ -414,7 +452,7 @@ function update() {
                   <ResizablePanel
                     defaultSize={15}
                     minSize={15}
-                    maxSize={40}
+                    maxSize={35}
                   >
                     <AssetManager 
                       assets={assets}
@@ -428,24 +466,43 @@ function update() {
             </>
           )}
           
-          {/* Right panel - editor */}
+          {/* Right panel - file explorer and editor */}
           <ResizablePanel 
             defaultSize={editorMode === 'phaser' ? 30 : 70} 
             minSize={20} 
             maxSize={70}
             className="flex flex-col"
           >
-            <FileTabs 
-              filenames={Object.keys(files)} 
-              activeFilename={activeFilename} 
-              onSelectFile={setActiveFilename} 
-            />
-            <CodeEditor 
-              code={files[activeFilename]} 
-              activeFilename={activeFilename}
-              isLoading={isProcessing} 
-              onCodeChange={handleCodeChange}
-            />
+            <ResizablePanelGroup direction="vertical">
+              <ResizablePanel
+                defaultSize={30}
+                minSize={15}
+                maxSize={50}
+              >
+                <FileExplorer
+                  files={files}
+                  activeFilename={activeFilename}
+                  onSelectFile={setActiveFilename}
+                  onCreateFile={handleCreateFile}
+                  onDeleteFile={handleDeleteFile}
+                />
+              </ResizablePanel>
+              
+              <ResizableHandle withHandle />
+              
+              <ResizablePanel
+                defaultSize={70}
+                minSize={50}
+                maxSize={85}
+              >
+                <CodeEditor 
+                  code={files[activeFilename]} 
+                  activeFilename={activeFilename}
+                  isLoading={isProcessing} 
+                  onCodeChange={handleCodeChange}
+                />
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
