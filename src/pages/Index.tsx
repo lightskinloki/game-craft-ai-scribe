@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/components/Header';
 import PromptInput from '@/components/PromptInput';
@@ -466,19 +466,27 @@ function update() {
             </>
           )}
           
-          {/* Right panel - file explorer and editor */}
+          {/* Right panel - now with tabs for file explorer and editor */}
           <ResizablePanel 
             defaultSize={editorMode === 'phaser' ? 30 : 70} 
             minSize={20} 
             maxSize={70}
             className="flex flex-col"
           >
-            <ResizablePanelGroup direction="vertical">
-              <ResizablePanel
-                defaultSize={30}
-                minSize={15}
-                maxSize={50}
-              >
+            <Tabs defaultValue="editor" className="h-full flex flex-col">
+              <TabsList className="w-full justify-start border-b rounded-none px-2">
+                <TabsTrigger value="editor">Editor</TabsTrigger>
+                <TabsTrigger value="files">Files</TabsTrigger>
+              </TabsList>
+              <TabsContent value="editor" className="flex-1 m-0 p-0">
+                <CodeEditor 
+                  code={files[activeFilename]} 
+                  activeFilename={activeFilename}
+                  isLoading={isProcessing} 
+                  onCodeChange={handleCodeChange}
+                />
+              </TabsContent>
+              <TabsContent value="files" className="flex-1 m-0 p-0">
                 <FileExplorer
                   files={files}
                   activeFilename={activeFilename}
@@ -486,23 +494,8 @@ function update() {
                   onCreateFile={handleCreateFile}
                   onDeleteFile={handleDeleteFile}
                 />
-              </ResizablePanel>
-              
-              <ResizableHandle withHandle />
-              
-              <ResizablePanel
-                defaultSize={70}
-                minSize={50}
-                maxSize={85}
-              >
-                <CodeEditor 
-                  code={files[activeFilename]} 
-                  activeFilename={activeFilename}
-                  isLoading={isProcessing} 
-                  onCodeChange={handleCodeChange}
-                />
-              </ResizablePanel>
-            </ResizablePanelGroup>
+              </TabsContent>
+            </Tabs>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
