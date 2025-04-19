@@ -1,97 +1,89 @@
-GameCraft AI Scribe - Updated Development Roadmap (v6 - Incorporating Priorities)
+GameCraft AI Scribe - Development Roadmap (v8)
 
-Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users, encompassing a wide range of developer aids and learning tools.
+Goal: Evolve from the current functional prototype into a robust, user-friendly AI-assisted game development environment, particularly strong for Phaser 3 users, encompassing a wide range of developer aids and learning tools, before preparing for distribution.
 
-✅ Phase 1: Core Enhancements & Stability (Functionally Complete)
+✅ Phase 1: Core Enhancements & Stability (Functionally Complete - Pending Polish)
 
 Focus: Address critical usability gaps, enhance core debugging, ensure stability, complete basic I/O.
 
-Status: Core features implemented. Final polish/bug-fixing needed.
+Status: All core features implemented. Final polish & testing phase required before moving on.
 
-Key Features Implemented: Local Project Save/Load, Basic Multi-File Support, Phaser Console Log Access, Auto Game Preview, Basic Project Export.
+Key Features Implemented:
 
-Remaining Tasks:
+✅ Project Saving & Loading (Local)
 
-🔄 UI Polish & Bug Fixing: IMMEDIATE FOCUS (Fix Layouts, Improve Load States, Optional Launch Button).
+✅ Enhanced Multi-File Support (Multiple .js + index.html) w/ File Explorer (in tab)
+
+✅ Phaser Console Log Access
+
+✅ Manual Game Preview Update (via "Run" Button)
+
+✅ Basic Project Export (Self-contained w/ assets)
+
+✅ Layout: Vertical Middle Panel (Resizable), Tabbed Right Panel (Files/Editor)
+
+Remaining Tasks for Phase 1:
+
+🔄 UI Polish & Bug Fixing / Testing: IMMEDIATE & ONLY FOCUS for Phase 1
+
+Thoroughly test ALL Phase 1 features: Save/Load, Export, Console Log, Preview ("Run" Button), File Management, Mode Switching.
+
+Evaluate layout usability: Test resizing panels, test switching tabs. Ensure content display and responsiveness.
+
+Fix any discovered bugs: Address glitches in functionality or display.
+
+Improve loading indicators and user feedback consistency.
+
+General code cleanup / consistency checks.
 
 Phase 2: AI Precision, Learning Aids & Workflow
 
-Focus: Enhance the core AI interaction quality, add learning tools, improve developer productivity.
+Focus: Enhance the core AI interaction quality, add learning tools, improve developer productivity. (To start after Phase 1 Polish is complete).
 
 Prioritized Features:
 
-⭐ "Explain Like I'm 5" (ELI5) Mode: (High Priority)
+⭐ "Explain Like I'm 5" (ELI5) Mode: (AI Interaction)
 
-Implement UI toggle.
+⭐ AI Line Number Awareness: (AI Precision - Requires careful testing)
 
-Implement backend prompt modification.
+⭐ Project Templates (incl. Minecraft Clone Tutorial): (Onboarding/Productivity)
 
-⭐ AI Line Number Awareness: (High Priority - Requires careful testing)
+Editor Enhancements: (Linting, Formatting)
 
-Implement frontend preprocessing in handlePromptSubmit to add NNN: prefixes to code sent to backend.
+Code Snippet Library (Local Storage): (Productivity)
 
-Update backend structured_prompt to instruct AI on using/omitting these prefixes.
+Integrated Phaser Documentation Search: (Developer Aid)
 
-Thoroughly test impact on AI output quality and potential token usage issues.
+Asset Manager Improvements: (Thumbnails, Paired Assets?)
 
-⭐ Project Templates (incl. Minecraft Clone Tutorial): (High Priority)
+Persistent Settings: (QoL - LocalStorage)
 
-Develop the actual code content for the template(s).
+Basic Performance Monitoring: (FPS Counter)
 
-Implement template selection UI.
+Phase 3: Advanced AI, Polish & Sharing Foundations
 
-Implement logic in Index.tsx to load selected template into files state.
+Focus: Refine UX, add more sophisticated AI interactions, improve code quality tools, lay groundwork for potential online features. (Further Out).
 
-Editor Enhancements:
+Key Features: AI Conversation History, Advanced Editor (Search/Replace, Autocomplete), Contextual AI Prompts/Refactoring, AI Tutorials, Enhanced Onboarding, Cloud Saving/Accounts, Simple Project Sharing, Template Sharing.
 
-Linting (ESLint Integration).
+Future Considerations / Phase X: Advanced, Experimental & Specialized Features
 
-Formatting (Prettier Integration).
+Focus: Explore cutting-edge integrations, highly complex features, community aspects, specialized tooling. (Long Term / Post-MVP).
 
-Code Snippet Library (Local Storage):
+Key Features: Full AI Game Creation (Planner/Executor/Checker), AI-Assisted Tilemap Editor, Version Control, Build/Deployment Integration (Web), Collaboration, State Machine Viz, Accessibility Checker, Visual Editor Elements, Integrated Debugger, Support for Other Engines.
 
-Implement snippet management UI/logic.
+Post-Development / Distribution Phase (Separate Effort)
 
-Implement editor insertion.
+Focus: Packaging the completed web application for easy installation and launch by end-users, independent of the development environment.
 
-Use localStorage.
+Potential Tasks:
 
-Integrated Phaser Documentation Search:
+Application Packaging: Using frameworks like Electron or Tauri to create native desktop installers (.exe, .app, .deb, etc.).
 
-Implement docs search UI/logic.
+Dependency Bundling: Ensuring necessary runtimes (potentially lightweight Python/Node) are included or handled by the installer.
 
-Asset Manager Improvements:
+Configuration Management: Handling API key input or other configurations in the packaged app.
 
-Display image thumbnails.
+Auto-Updates: Implementing mechanisms for updating the packaged application.
 
-(Optional: Paired asset handling).
-
-Persistent Settings:
-
-Use localStorage for various UI/mode states.
-
-Basic Performance Monitoring:
-
-Display simple FPS counter.
-
-Phase 3: Advanced AI, Polish & Sharing Foundations (Further Out)
-
-Focus: Refine UX, add more sophisticated AI interactions, improve code quality tools, lay groundwork for online features.
-
-Key Features: AI Conversation History, Advanced Editor (Search/Replace, Autocomplete), Contextual AI Prompts/Refactoring, AI Tutorials, Onboarding, Cloud Saving/Accounts, Sharing, Template Sharing.
-
-Future Considerations / Phase X: Advanced & Experimental Features (Long Term)
-
-Focus: Explore cutting-edge integrations, highly complex features, community aspects, specialized tooling.
-
-Key Features: Full AI Game Creation (Planner/Executor/Checker), AI Tilemap Editor, Version Control, Build/Deploy Tools, Collaboration, State Machine Viz, Accessibility Checker, Visual Editors, Debugger, Other Engines.
-
-Updated Next Steps:
-
-Complete Phase 1 Polish & Bug Fixing: Ensure the current feature set is stable and usable.
-
-Implement ELI5 Mode: Relatively straightforward start to Phase 2.
-
-Implement AI Line Number Awareness: Tackle this next due to its impact on AI interaction quality. 
-
-Develop Minecraft Clone Template & Implement Template Feature: Work on the template content and the loading mechanism concurrently or sequentially.
+Creating Desktop Shortcuts/Icons: The final step for the one-click launch experience.
