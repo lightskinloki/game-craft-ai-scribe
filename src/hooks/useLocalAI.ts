@@ -20,19 +20,27 @@ export const useLocalAI = () => {
   // Use any type for the pipeline to avoid TypeScript conflicts
   const [pipeline_, setPipeline] = useState<any>(null);
 
-  // Scan for GGUF files and initialize model
+  // Scan for GGUF and SafeTensors files and initialize model
   useEffect(() => {
     const initializeModel = async () => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       try {
-        // Try to find and load a GGUF model from /public/models/
+        // Try to find and load GGUF or SafeTensors models from /public/models/
         const commonModelNames = [
+          // GGUF models
           'model.gguf',
           'chat-model.gguf',
           'llama.gguf',
           'phi.gguf',
-          'gemma.gguf'
+          'gemma.gguf',
+          // SafeTensors models
+          'model.safetensors',
+          'chat-model.safetensors',
+          'llama.safetensors',
+          'phi.safetensors',
+          'gemma.safetensors',
+          'pytorch_model.safetensors'
         ];
         
         let modelLoaded = false;
@@ -64,7 +72,7 @@ export const useLocalAI = () => {
           isLoading: false,
           isAvailable: modelLoaded,
           modelName: loadedModelName || null,
-          error: modelLoaded ? null : 'No local GGUF models found in /public/models/',
+          error: modelLoaded ? null : 'No local GGUF or SafeTensors models found in /public/models/',
         }));
         
       } catch (error) {
