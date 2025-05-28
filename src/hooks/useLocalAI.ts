@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { pipeline, Pipeline } from '@huggingface/transformers';
+import { pipeline } from '@huggingface/transformers';
 
 interface LocalAIState {
   isLoading: boolean;
@@ -17,7 +17,8 @@ export const useLocalAI = () => {
     error: null,
   });
   
-  const [pipeline_, setPipeline] = useState<Pipeline | null>(null);
+  // Use any type for the pipeline to avoid TypeScript conflicts
+  const [pipeline_, setPipeline] = useState<any>(null);
 
   // Scan for GGUF files and initialize model
   useEffect(() => {
