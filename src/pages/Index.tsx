@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +15,7 @@ import { saveProjectToFile, loadProjectFromFile } from '@/utils/fileHandling';
 import type { ProjectSaveState } from '@/types/project';
 import ConsoleOutput, { LogEntry } from '@/components/ConsoleOutput';
 import JSZip from 'jszip';
+import { useLocalAI } from '@/hooks/useLocalAI';
 
 // Updated ProjectSaveState interface
 const updateProjectSaveState = () => {
@@ -27,6 +28,9 @@ const Index = () => {
   const [editorMode, setEditorMode] = useState<EditorMode>('general');
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
+  
+  // Local AI hook
+  const localAI = useLocalAI();
 
   // State for multi-file support
   const [files, setFiles] = useState<{ [filename: string]: string }>({
@@ -61,41 +65,63 @@ const Index = () => {
     try {
       console.log('Submitting prompt:', prompt);
       
-      // Call the backend API
-      const response = await fetch('http://localhost:5000/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          prompt,
-          existingCode: files[activeFilename], // Send active file content
-          activeFilename,  // Send the active filename
-          editorMode // Send the current editor mode
-        }),
-      });
+      let aiResponse = '';
+      let usedLocalAI = false;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate explanation');
+      // Try local AI first if available
+      if (localAI.isAvailable) {
+        try {
+          console.log('Attempting local AI generation...');
+          aiResponse = await localAI.generateText(prompt);
+          usedLocalAI = true;
+          console.log('Local AI response received');
+        } catch (localError) {
+          console.warn('Local AI failed, falling back to Gemini API:', localError);
+        }
       }
       
-      const data = await response.json();
-      console.log('API Response:', data); // Debug log the entire response
+      // Fallback to Gemini API if local AI failed or unavailable
+      if (!usedLocalAI) {
+        console.log('Using Gemini API...');
+        const response = await fetch('http://localhost:5000/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            prompt,
+            existingCode: files[activeFilename],
+            activeFilename,
+            editorMode
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate explanation');
+        }
+        
+        const data = await response.json();
+        console.log('Gemini API Response:', data);
+        
+        if (data && typeof data.explanation === 'string') {
+          aiResponse = data.explanation;
+        } else {
+          throw new Error('Invalid response format from API');
+        }
+      }
       
       // Update the explanation
-      if (data && typeof data.explanation === 'string') {
-        console.log('Setting explanation state to:', data.explanation);
-        setAiExplanation(data.explanation);
-      } else {
-        console.warn('Invalid explanation format:', data);
-        setAiExplanation('Received an invalid response format from the AI. Please try again.');
-      }
+      console.log('Setting explanation state to:', aiResponse);
+      setAiExplanation(aiResponse);
       
       toast({
-        title: 'AI Response Received',
-        description: 'The AI has analyzed your prompt.',
+        title: `AI Response Received`,
+        description: usedLocalAI 
+          ? `Response generated using local model: ${localAI.modelName}`
+          : 'Response generated using Gemini API',
       });
+      
     } catch (error) {
       console.error('Error generating response:', error);
       setAiExplanation(`Error: ${error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.'}`);
@@ -109,7 +135,6 @@ const Index = () => {
     }
   };
 
-  // Handle code updates from the editor
   const handleCodeChange = (newCode: string) => {
     setFiles(prevFiles => ({
       ...prevFiles,
@@ -401,10 +426,22 @@ function update() {
         onExportProject={handleExportProject}
       />
       <div className="flex justify-end px-4 py-2">
-        <ModeSelector 
-          currentMode={editorMode} 
-          onModeChange={handleModeChange} 
-        />
+        <div className="flex items-center gap-4">
+          {/* Local AI Status Indicator */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className={`w-2 h-2 rounded-full ${
+              localAI.isLoading ? 'bg-yellow-500' : 
+              localAI.isAvailable ? 'bg-green-500' : 'bg-red-500'
+            }`} />
+            {localAI.isLoading ? 'Loading local AI...' : 
+             localAI.isAvailable ? `Local AI: ${localAI.modelName}` : 
+             'Local AI: Not available'}
+          </div>
+          <ModeSelector 
+            currentMode={editorMode} 
+            onModeChange={handleModeChange} 
+          />
+        </div>
       </div>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
