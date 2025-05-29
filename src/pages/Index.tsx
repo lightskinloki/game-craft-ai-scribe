@@ -16,6 +16,7 @@ import type { ProjectSaveState } from '@/types/project';
 import ConsoleOutput, { LogEntry } from '@/components/ConsoleOutput';
 import JSZip from 'jszip';
 import { useLocalAI } from '@/hooks/useLocalAI';
+import { Cpu, Cloud } from 'lucide-react';
 
 // Updated ProjectSaveState interface
 const updateProjectSaveState = () => {
@@ -463,39 +464,35 @@ function update() {
         onLoadProject={handleLoadProject}
         onExportProject={handleExportProject}
       />
-      <div className="flex justify-end px-4 py-2">
+      <div className="flex justify-between items-center px-4 py-1.5 border-b border-border/50 bg-secondary/20">
         <div className="flex items-center gap-4">
-          {/* Enhanced Local AI Status Indicator */}
-          <div className="flex items-center gap-2 text-sm">
-            <div className={`w-3 h-3 rounded-full ${
+          {/* Compact AI Status */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className={`w-2 h-2 rounded-full ${
               localAI.isLoading ? 'bg-yellow-500 animate-pulse' : 
               localAI.isAvailable ? 'bg-green-500' : 'bg-red-500'
             }`} />
-            <div className="flex flex-col">
-              <span className={`font-medium ${
-                localAI.isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}>
-                {localAI.isLoading ? 'Loading Local AI...' : 
-                 localAI.isAvailable ? `Local AI: ${localAI.modelName}` : 
-                 'Local AI: Unavailable'}
+            <span className={`font-medium ${
+              localAI.isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+            }`}>
+              {localAI.isLoading ? 'Loading AI...' : 
+               localAI.isAvailable ? `Local AI (${localAI.modelType?.toUpperCase()})` : 
+               'Local AI: Unavailable'}
+            </span>
+            {/* Gemini Fallback Notice */}
+            {!localAI.isAvailable && (
+              <span className="text-muted-foreground/70 flex items-center gap-1">
+                <Cloud className="h-3 w-3" />
+                Gemini API fallback available
               </span>
-              {localAI.isLoading && localAI.loadProgress > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(localAI.loadProgress)}% loaded
-                </span>
-              )}
-              {localAI.isAvailable && localAI.modelType && (
-                <span className="text-xs text-muted-foreground">
-                  {localAI.modelType.toUpperCase()} format
-                </span>
-              )}
-            </div>
+            )}
           </div>
-          <ModeSelector 
-            currentMode={editorMode} 
-            onModeChange={handleModeChange} 
-          />
         </div>
+        
+        <ModeSelector 
+          currentMode={editorMode} 
+          onModeChange={handleModeChange} 
+        />
       </div>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
