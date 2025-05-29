@@ -67,67 +67,105 @@ const Index = () => {
       
       let aiResponse = '';
       let usedLocalAI = false;
+      let usedFallback = false;
       
-      // Try local AI first if available
+      // PRIORITIZE local AI - this is now the primary method
       if (localAI.isAvailable) {
         try {
-          console.log('Attempting local AI generation...');
-          aiResponse = await localAI.generateText(prompt);
+          console.log('Using local AI generation (primary method)...');
+          
+          // Enhanced prompt for code generation
+          const enhancedPrompt = `As a game development assistant, ${prompt}
+
+Please provide a clear explanation and any necessary code changes for ${editorMode === 'phaser' ? 'Phaser 3' : 'JavaScript'} development.`;
+          
+          aiResponse = await localAI.generateText(enhancedPrompt, {
+            maxTokens: 750,
+            temperature: 0.7,
+            topP: 0.9,
+          });
+          
           usedLocalAI = true;
-          console.log('Local AI response received');
+          console.log('Local AI response generated successfully');
         } catch (localError) {
-          console.warn('Local AI failed, falling back to Gemini API:', localError);
+          console.warn('Local AI generation failed:', localError);
+          
+          // Show specific error to user
+          toast({
+            title: 'Local AI Error',
+            description: `Local model failed: ${localError instanceof Error ? localError.message : 'Unknown error'}. Falling back to Gemini API.`,
+            variant: 'destructive',
+          });
         }
+      } else {
+        console.log('Local AI not available:', localAI.error);
+        
+        // Show helpful message about local AI setup
+        toast({
+          title: 'Local AI Not Available',
+          description: localAI.error || 'Place a GGUF or SafeTensors model in /public/models/ for local inference.',
+          variant: 'destructive',
+        });
       }
       
-      // Fallback to Gemini API if local AI failed or unavailable
+      // Fallback to Gemini API only if local AI failed or unavailable
       if (!usedLocalAI) {
-        console.log('Using Gemini API...');
-        const response = await fetch('http://localhost:5000/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            prompt,
-            existingCode: files[activeFilename],
-            activeFilename,
-            editorMode
-          }),
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to generate explanation');
-        }
-        
-        const data = await response.json();
-        console.log('Gemini API Response:', data);
-        
-        if (data && typeof data.explanation === 'string') {
-          aiResponse = data.explanation;
-        } else {
-          throw new Error('Invalid response format from API');
+        try {
+          console.log('Falling back to Gemini API...');
+          const response = await fetch('http://localhost:5000/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              prompt,
+              existingCode: files[activeFilename],
+              activeFilename,
+              editorMode
+            }),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Gemini API request failed');
+          }
+          
+          const data = await response.json();
+          console.log('Gemini API Response received');
+          
+          if (data && typeof data.explanation === 'string') {
+            aiResponse = data.explanation;
+            usedFallback = true;
+          } else {
+            throw new Error('Invalid response format from Gemini API');
+          }
+        } catch (geminiError) {
+          console.error('Gemini API also failed:', geminiError);
+          throw new Error(`Both local AI and Gemini API failed. Local: ${localAI.error || 'Not available'}. Gemini: ${geminiError instanceof Error ? geminiError.message : 'Unknown error'}`);
         }
       }
       
       // Update the explanation
-      console.log('Setting explanation state to:', aiResponse);
+      console.log('Setting explanation state');
       setAiExplanation(aiResponse);
       
+      // Enhanced success feedback
       toast({
-        title: `AI Response Received`,
+        title: `AI Response Generated`,
         description: usedLocalAI 
-          ? `Response generated using local model: ${localAI.modelName}`
-          : 'Response generated using Gemini API',
+          ? `✓ Generated locally using ${localAI.modelName} (${localAI.modelType?.toUpperCase()})`
+          : usedFallback 
+          ? '⚠️ Generated using Gemini API fallback'
+          : 'Response generated',
       });
       
     } catch (error) {
       console.error('Error generating response:', error);
-      setAiExplanation(`Error: ${error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process your prompt. Please check your local model setup or API configuration.';
+      setAiExplanation(`Error: ${errorMessage}`);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to process your prompt. Please try again.',
+        title: 'Generation Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -427,15 +465,31 @@ function update() {
       />
       <div className="flex justify-end px-4 py-2">
         <div className="flex items-center gap-4">
-          {/* Local AI Status Indicator */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className={`w-2 h-2 rounded-full ${
-              localAI.isLoading ? 'bg-yellow-500' : 
+          {/* Enhanced Local AI Status Indicator */}
+          <div className="flex items-center gap-2 text-sm">
+            <div className={`w-3 h-3 rounded-full ${
+              localAI.isLoading ? 'bg-yellow-500 animate-pulse' : 
               localAI.isAvailable ? 'bg-green-500' : 'bg-red-500'
             }`} />
-            {localAI.isLoading ? 'Loading local AI...' : 
-             localAI.isAvailable ? `Local AI: ${localAI.modelName}` : 
-             'Local AI: Not available'}
+            <div className="flex flex-col">
+              <span className={`font-medium ${
+                localAI.isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {localAI.isLoading ? 'Loading Local AI...' : 
+                 localAI.isAvailable ? `Local AI: ${localAI.modelName}` : 
+                 'Local AI: Unavailable'}
+              </span>
+              {localAI.isLoading && localAI.loadProgress > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {Math.round(localAI.loadProgress)}% loaded
+                </span>
+              )}
+              {localAI.isAvailable && localAI.modelType && (
+                <span className="text-xs text-muted-foreground">
+                  {localAI.modelType.toUpperCase()} format
+                </span>
+              )}
+            </div>
           </div>
           <ModeSelector 
             currentMode={editorMode} 

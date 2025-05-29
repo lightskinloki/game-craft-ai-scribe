@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Send, Cpu, Cloud } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLocalAI } from '@/hooks/useLocalAI';
 
 interface PromptInputProps {
   onSubmit: (prompt: string) => void;
@@ -13,6 +14,7 @@ interface PromptInputProps {
 const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing }) => {
   const [prompt, setPrompt] = useState('');
   const { toast } = useToast();
+  const localAI = useLocalAI();
 
   const handleSubmit = () => {
     if (!prompt.trim()) {
@@ -35,6 +37,19 @@ const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing }) => 
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+        {localAI.isAvailable ? (
+          <>
+            <Cpu className="h-3 w-3 text-green-500" />
+            <span>Using local AI model ({localAI.modelType?.toUpperCase()})</span>
+          </>
+        ) : (
+          <>
+            <Cloud className="h-3 w-3 text-orange-500" />
+            <span>Will use Gemini API fallback - Consider adding a local model</span>
+          </>
+        )}
+      </div>
       <Textarea
         id="promptInput"
         value={prompt}

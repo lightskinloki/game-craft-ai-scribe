@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Code, Sparkles, Save, FolderOpen, Download } from 'lucide-react';
+import { Code, Sparkles, Save, FolderOpen, Download, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
@@ -15,6 +15,9 @@ const Header = ({ onSaveProject, onLoadProject, onExportProject }: HeaderProps) 
       <div className="flex items-center space-x-2">
         <Code className="h-6 w-6 text-primary" />
         <h1 className="text-xl font-bold tracking-tight">GameCraft AI</h1>
+        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+          Local-First
+        </span>
       </div>
       <div className="flex items-center gap-4">
         <Button
@@ -46,8 +49,9 @@ const Header = ({ onSaveProject, onLoadProject, onExportProject }: HeaderProps) 
         </Button>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">Powered by</span>
-          <Sparkles className="h-4 w-4 text-primary animate-pulse-subtle" />
-          <span className="font-semibold">Gemini</span>
+          <Cpu className="h-4 w-4 text-primary" />
+          <span className="font-semibold">Local AI</span>
+          <span className="text-xs text-muted-foreground">+ Gemini Fallback</span>
         </div>
       </div>
     </header>
