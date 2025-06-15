@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Code, Save, Download, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,7 @@ const Index = () => {
         description: "Your project has been loaded successfully",
       });
     }
-  }, [projectData]);
+  }, [projectData, toast]);
 
   const handlePromptSubmit = useCallback(async (prompt: string) => {
     setCurrentPrompt(prompt);
