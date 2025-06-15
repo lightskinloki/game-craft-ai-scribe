@@ -18,11 +18,6 @@ import JSZip from 'jszip';
 import { useLocalAI } from '@/hooks/useLocalAI';
 import { Cpu, Cloud } from 'lucide-react';
 
-// Updated ProjectSaveState interface
-const updateProjectSaveState = () => {
-  // This is just here to make sure the code compiles, but the interface is updated in the types file
-};
-
 const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiExplanation, setAiExplanation] = useState('');
@@ -177,11 +172,10 @@ Please provide a clear explanation and any necessary code changes for ${editorMo
   const handleCodeChange = (newCode: string) => {
     setFiles(prevFiles => ({
       ...prevFiles,
-      [activeFilename]: newCode // Update only the active file
+      [activeFilename]: newCode
     }));
   };
 
-  // New function to create a file
   const handleCreateFile = (filename: string) => {
     // Basic validation
     if (!filename.trim() || files[filename]) {
@@ -198,7 +192,6 @@ Please provide a clear explanation and any necessary code changes for ${editorMo
     setActiveFilename(filename);
   };
 
-  // New function to delete a file
   const handleDeleteFile = (filename: string) => {
     // Don't allow deleting index.html
     if (filename === 'index.html') {
@@ -221,7 +214,6 @@ Please provide a clear explanation and any necessary code changes for ${editorMo
     }
   };
 
-  // Handle mode switching
   const handleModeChange = (mode: EditorMode) => {
     setEditorMode(mode);
     
@@ -337,7 +329,6 @@ function update() {
     }
   };
 
-  // Function for exporting the project as a ZIP
   const handleExportProject = async () => {
     // Show loading toast
     toast({
@@ -496,14 +487,19 @@ function update() {
       </div>
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Left panel - AI output and prompt input */}
+          {/* Left panel - AI output and prompt input with file change support */}
           <ResizablePanel defaultSize={30} minSize={20} className="flex flex-col">
             <div className="p-4">
               <PromptInput onSubmit={handlePromptSubmit} isProcessing={isProcessing} />
             </div>
             <Separator />
             <div className="flex-1 overflow-hidden">
-              <AiOutput explanation={aiExplanation} isLoading={isProcessing} />
+              <AiOutput 
+                explanation={aiExplanation} 
+                isLoading={isProcessing}
+                currentFiles={files}
+                onFilesChange={setFiles}
+              />
             </div>
           </ResizablePanel>
           
