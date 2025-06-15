@@ -96,19 +96,14 @@ const Index = () => {
 
   const handleSaveProject = useCallback(async () => {
     try {
-      // Convert files array to the expected format for ProjectSaveState
-      const filesMap: { [filename: string]: string } = {};
-      files.forEach(file => {
-        filesMap[file.name] = file.content;
-      });
-
       const projectData: ProjectSaveState = {
-        version: 1, // Changed from string to number
+        version: '0.1.0',
         generatedCode: generatedCode,
         editorMode: editorMode,
-        files: filesMap, // Changed from files array to files map
-        activeFilename: files.find(f => f.id === activeFileId)?.name, // Changed from activeFileId to activeFilename
-        assets: [], // Added required assets field
+        files: files,
+        activeFileId: activeFileId,
+        lastPrompt: currentPrompt,
+        consoleOutput: consoleOutput,
       };
       
       await saveProjectToFile(projectData);
@@ -120,7 +115,7 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  }, [generatedCode, editorMode, files, activeFileId, toast]);
+  }, [generatedCode, editorMode, files, activeFileId, currentPrompt, consoleOutput, toast]);
 
   const handleExportProject = useCallback(async () => {
     try {
