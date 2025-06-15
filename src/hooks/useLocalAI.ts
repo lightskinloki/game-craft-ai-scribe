@@ -19,6 +19,14 @@ interface ModelCompatibility {
   recommendation?: string;
 }
 
+interface UploadedModel {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+}
+
 export const useLocalAI = () => {
   const [state, setState] = useState<LocalAIState>({
     isLoading: false,
@@ -51,6 +59,17 @@ export const useLocalAI = () => {
     return { cores, memory, webGPU, recommendation };
   }, []);
 
+  // Get uploaded models from storage
+  const getUploadedModels = useCallback((): UploadedModel[] => {
+    try {
+      const availableModels = sessionStorage.getItem('availableModels');
+      return availableModels ? JSON.parse(availableModels) : [];
+    } catch (error) {
+      console.error('Error reading uploaded models:', error);
+      return [];
+    }
+  }, []);
+
   // Enhanced model scanning and initialization
   useEffect(() => {
     const initializeModel = async () => {
@@ -72,18 +91,29 @@ export const useLocalAI = () => {
           loadProgress: 10 
         }));
 
-        // Enhanced model configurations with size estimates
+        // Get uploaded models first
+        const uploadedModels = getUploadedModels();
+        
+        // Enhanced model configurations with uploaded models first
         const modelConfigs = [
-          // GGUF models (prioritized for better local performance)
-          { name: 'model.gguf', type: 'gguf' as const, size: 'unknown' },
-          { name: 'tinyllama-1.1b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.5B' },
-          { name: 'phi-3-mini-4k-instruct-q4.gguf', type: 'gguf' as const, size: '3.8B' },
-          { name: 'llama-2-7b-chat.q4_0.gguf', type: 'gguf' as const, size: '7B' },
-          { name: 'mistral-7b-instruct-v0.1.q4_0.gguf', type: 'gguf' as const, size: '7B' },
-          { name: 'qwen-1_8b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.8B' },
+          // Uploaded models (prioritized)
+          ...uploadedModels.map(model => ({
+            name: model.name,
+            path: model.url,
+            type: model.type.includes('gguf') ? 'gguf' as const : 'safetensors' as const,
+            size: `${(model.size / (1024 * 1024 * 1024)).toFixed(1)}B`,
+            source: 'uploaded' as const
+          })),
+          // Public directory models (fallback)
+          { name: 'model.gguf', path: '/models/model.gguf', type: 'gguf' as const, size: 'unknown', source: 'public' as const },
+          { name: 'tinyllama-1.1b-chat-q4_0.gguf', path: '/models/tinyllama-1.1b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.5B', source: 'public' as const },
+          { name: 'phi-3-mini-4k-instruct-q4.gguf', path: '/models/phi-3-mini-4k-instruct-q4.gguf', type: 'gguf' as const, size: '3.8B', source: 'public' as const },
+          { name: 'llama-2-7b-chat.q4_0.gguf', path: '/models/llama-2-7b-chat.q4_0.gguf', type: 'gguf' as const, size: '7B', source: 'public' as const },
+          { name: 'mistral-7b-instruct-v0.1.q4_0.gguf', path: '/models/mistral-7b-instruct-v0.1.q4_0.gguf', type: 'gguf' as const, size: '7B', source: 'public' as const },
+          { name: 'qwen-1_8b-chat-q4_0.gguf', path: '/models/qwen-1_8b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.8B', source: 'public' as const },
           // SafeTensors models
-          { name: 'model.safetensors', type: 'safetensors' as const, size: 'unknown' },
-          { name: 'pytorch_model.safetensors', type: 'safetensors' as const, size: 'unknown' },
+          { name: 'model.safetensors', path: '/models/model.safetensors', type: 'safetensors' as const, size: 'unknown', source: 'public' as const },
+          { name: 'pytorch_model.safetensors', path: '/models/pytorch_model.safetensors', type: 'safetensors' as const, size: 'unknown', source: 'public' as const },
         ];
         
         let modelLoaded = false;
@@ -94,8 +124,7 @@ export const useLocalAI = () => {
         
         for (const modelConfig of modelConfigs) {
           try {
-            const modelPath = `/models/${modelConfig.name}`;
-            console.log(`Attempting to load ${modelConfig.type.toUpperCase()} model: ${modelPath} (${modelConfig.size})`);
+            console.log(`Attempting to load ${modelConfig.type.toUpperCase()} model: ${modelConfig.name} (${modelConfig.size}) from ${modelConfig.source}`);
             
             setState(prev => ({ ...prev, loadProgress: 30 }));
             
@@ -108,10 +137,10 @@ export const useLocalAI = () => {
             
             for (const device of deviceOptions) {
               try {
-                console.log(`Trying device: ${device}`);
+                console.log(`Trying device: ${device} for model: ${modelConfig.name}`);
                 setState(prev => ({ ...prev, loadProgress: 40 }));
                 
-                textGenerator = await pipeline('text-generation', modelPath, {
+                textGenerator = await pipeline('text-generation', modelConfig.path, {
                   device: device,
                   dtype: device === 'webgpu' ? 'fp16' : 'fp32',
                   progress_callback: (progress: any) => {
@@ -120,10 +149,10 @@ export const useLocalAI = () => {
                   }
                 });
                 
-                console.log(`Successfully loaded on ${device}`);
+                console.log(`Successfully loaded ${modelConfig.name} on ${device}`);
                 break;
               } catch (deviceError) {
-                console.log(`Failed on ${device}:`, deviceError);
+                console.log(`Failed on ${device} for ${modelConfig.name}:`, deviceError);
                 continue;
               }
             }
@@ -153,7 +182,7 @@ export const useLocalAI = () => {
           modelType: loadedModelType,
           loadProgress: modelLoaded ? 100 : 0,
           canHotSwap: modelLoaded,
-          error: modelLoaded ? null : getDetailedError(hardware.recommendation),
+          error: modelLoaded ? null : getDetailedError(hardware.recommendation, uploadedModels.length > 0),
         }));
         
       } catch (error) {
@@ -170,17 +199,21 @@ export const useLocalAI = () => {
     };
 
     initializeModel();
-  }, [detectHardware]);
+  }, [detectHardware, getUploadedModels]);
 
   // Helper function for detailed error messages
-  const getDetailedError = (recommendation: 'low' | 'mid' | 'high') => {
+  const getDetailedError = (recommendation: 'low' | 'mid' | 'high', hasUploadedModels: boolean) => {
     const recommendations = {
       low: 'For your hardware, try: TinyLlama-1.1B (tinyllama-1.1b-chat-q4_0.gguf) or Qwen-1.8B (qwen-1_8b-chat-q4_0.gguf)',
       mid: 'For your hardware, try: Phi-3-Mini (phi-3-mini-4k-instruct-q4.gguf) or Mistral-7B (mistral-7b-instruct-v0.1.q4_0.gguf)',
       high: 'Your hardware can handle larger models. Try Llama-2-7B (llama-2-7b-chat.q4_0.gguf) or similar 7B+ models'
     };
     
-    return `No compatible models found. ${recommendations[recommendation]}. Place GGUF or SafeTensors models in /public/models/`;
+    const baseMessage = hasUploadedModels 
+      ? 'Unable to load uploaded models. Check browser console for details.' 
+      : `No compatible models found. ${recommendations[recommendation]}.`;
+    
+    return `${baseMessage} Place GGUF or SafeTensors models in /public/models/ or use the Upload Model feature.`;
   };
 
   // Enhanced text generation with better error handling

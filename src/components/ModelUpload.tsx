@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Upload, File, Info, CheckCircle, XCircle } from 'lucide-react';
 
 interface ModelUploadProps {
   onClose: () => void;
+  onModelUploaded?: (modelName: string) => void;
 }
 
 interface ModelRecommendation {
@@ -21,11 +21,52 @@ interface ModelRecommendation {
   recommended: boolean;
 }
 
-const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
+// Helper function to save model to IndexedDB
+const saveModelToStorage = async (file: File): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('GameCraftModels', 1);
+    
+    request.onerror = () => reject(request.error);
+    
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('models')) {
+        db.createObjectStore('models', { keyPath: 'name' });
+      }
+    };
+    
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['models'], 'readwrite');
+      const store = transaction.objectStore('models');
+      
+      // Convert file to ArrayBuffer
+      const reader = new FileReader();
+      reader.onload = () => {
+        const modelData = {
+          name: file.name,
+          data: reader.result,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        const addRequest = store.put(modelData);
+        addRequest.onsuccess = () => resolve();
+        addRequest.onerror = () => reject(addRequest.error);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    };
+  });
+};
+
+const ModelUpload: React.FC<ModelUploadProps> = ({ onClose, onModelUploaded }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const modelRecommendations: ModelRecommendation[] = [
     {
@@ -71,8 +112,9 @@ const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
       if (validExtensions.includes(fileExtension)) {
         setSelectedFile(file);
         setUploadStatus('idle');
+        setErrorMessage('');
       } else {
-        alert('Please select a valid GGUF or SafeTensors model file.');
+        setErrorMessage('Please select a valid GGUF or SafeTensors model file.');
       }
     }
   }, []);
@@ -83,39 +125,58 @@ const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
     setUploading(true);
     setUploadProgress(0);
     setUploadStatus('idle');
+    setErrorMessage('');
 
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      // Create a FormData object and append the file
-      const formData = new FormData();
-      formData.append('model', selectedFile);
-
-      // In a real implementation, you would upload to your server or local storage
-      // For now, we'll simulate the upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Complete the progress
+      // Simulate initial progress
+      setUploadProgress(10);
+      
+      // Save the model to IndexedDB
+      console.log('Saving model to local storage:', selectedFile.name);
+      await saveModelToStorage(selectedFile);
+      setUploadProgress(80);
+      
+      // Create a blob URL for the model that can be accessed by the AI system
+      const modelBlob = new Blob([selectedFile], { type: selectedFile.type });
+      const modelUrl = URL.createObjectURL(modelBlob);
+      
+      // Store the URL in sessionStorage so the AI system can find it
+      const modelInfo = {
+        name: selectedFile.name,
+        url: modelUrl,
+        size: selectedFile.size,
+        type: selectedFile.type.includes('gguf') ? 'gguf' : 'safetensors',
+        uploadedAt: new Date().toISOString()
+      };
+      
+      sessionStorage.setItem(`model_${selectedFile.name}`, JSON.stringify(modelInfo));
+      
+      // Also add to a list of available models
+      const existingModels = JSON.parse(sessionStorage.getItem('availableModels') || '[]');
+      const updatedModels = [...existingModels.filter((m: any) => m.name !== selectedFile.name), modelInfo];
+      sessionStorage.setItem('availableModels', JSON.stringify(updatedModels));
+      
       setUploadProgress(100);
       setUploadStatus('success');
+      
+      console.log('Model uploaded successfully:', selectedFile.name);
+      
+      // Notify parent component
+      if (onModelUploaded) {
+        onModelUploaded(selectedFile.name);
+      }
       
       // Auto-close after success
       setTimeout(() => {
         onClose();
+        // Trigger a page reload to reinitialize the AI system with new model
+        window.location.reload();
       }, 2000);
 
     } catch (error) {
-      setUploadStatus('error');
       console.error('Upload failed:', error);
+      setUploadStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -182,7 +243,7 @@ const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
               <Info className="h-4 w-4" />
               <AlertDescription>
                 Supported formats: GGUF (.gguf) and SafeTensors (.safetensors). 
-                Models will be stored locally and never sent to external servers.
+                Models will be stored locally in your browser and never sent to external servers.
               </AlertDescription>
             </Alert>
 
@@ -227,11 +288,11 @@ const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span className="text-sm">Uploading model...</span>
+                  <span className="text-sm">Uploading and processing model...</span>
                 </div>
                 <Progress value={uploadProgress} className="w-full" />
                 <p className="text-xs text-muted-foreground text-center">
-                  {uploadProgress}% complete
+                  {uploadProgress}% complete - {uploadProgress < 80 ? 'Saving to local storage...' : 'Finalizing...'}
                 </p>
               </div>
             )}
@@ -240,16 +301,16 @@ const ModelUpload: React.FC<ModelUploadProps> = ({ onClose }) => {
               <Alert>
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-700">
-                  Model uploaded successfully! The AI assistant is now ready to use.
+                  Model uploaded successfully! The page will reload to initialize the AI with your new model.
                 </AlertDescription>
               </Alert>
             )}
 
-            {uploadStatus === 'error' && (
+            {(uploadStatus === 'error' || errorMessage) && (
               <Alert variant="destructive">
                 <XCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Upload failed. Please try again or check if the file is a valid model format.
+                  {errorMessage || 'Upload failed. Please try again or check if the file is a valid model format.'}
                 </AlertDescription>
               </Alert>
             )}
