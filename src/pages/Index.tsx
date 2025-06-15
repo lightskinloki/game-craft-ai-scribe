@@ -9,6 +9,7 @@ import { saveProjectToFile, loadProjectFromFile } from "@/utils/fileHandling";
 import { ProjectSaveState } from "@/types/project";
 import { v4 as uuidv4 } from 'uuid';
 import { useLocalAI } from '@/hooks/useLocalAI';
+import { aiService, EditorMode } from '@/services/aiService';
 import Header from '@/components/Header';
 import PromptInput from '@/components/PromptInput';
 import AiOutput from '@/components/AiOutput';
@@ -19,7 +20,7 @@ const Index = () => {
   const [generatedCode, setGeneratedCode] = useState<string>('');
   const [aiOutput, setAiOutput] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [editorMode, setEditorMode] = useState<'general' | 'phaser'>('general');
+  const [editorMode, setEditorMode] = useState<EditorMode>('general');
   const [activeTab, setActiveTab] = useState<'files' | 'preview' | 'console'>('files');
   const [files, setFiles] = useState<{ id: string; name: string; content: string; }[]>([{ id: 'main.js', name: 'main.js', content: '' }]);
   const [activeFileId, setActiveFileId] = useState<string>('main.js');
@@ -31,7 +32,7 @@ const Index = () => {
   const location = useLocation();
   const projectData = location.state?.projectData;
 
-  const { isAvailable, modelName } = useLocalAI();
+  const { isAvailable, modelName, isLoading, error: aiError } = useLocalAI();
 
   // Load project data if passed from landing page
   useEffect(() => {
@@ -54,20 +55,17 @@ const Index = () => {
     setCurrentPrompt(prompt);
     setIsProcessing(true);
     setAiOutput('');
+    
     try {
-      // Dynamically import the appropriate AI function based on the mode
-      let aiFunction;
-      if (editorMode === 'phaser') {
-        aiFunction = (await import('../utils/ai/phaserAI')).generatePhaserCode;
-      } else {
-        aiFunction = (await import('../utils/ai/generalAI')).generateCode;
+      console.log('Generating code with AI service...');
+      const newCode = await aiService.generateCode(prompt, editorMode);
+      
+      // Validate the generated code
+      const validation = await aiService.validateCode(newCode);
+      if (!validation.isValid) {
+        console.warn('Generated code has validation issues:', validation.errors);
       }
       
-      if (!aiFunction) {
-        throw new Error(`AI function not found for mode: ${editorMode}`);
-      }
-      
-      const newCode = await aiFunction(prompt);
       setGeneratedCode(prevCode => prevCode + '\n\n' + newCode);
       setAiOutput(newCode);
       
@@ -81,11 +79,16 @@ const Index = () => {
         });
       });
       
+      toast({
+        title: "Code Generated",
+        description: `${editorMode === 'phaser' ? 'Phaser' : 'General'} code generated successfully`,
+      });
+      
     } catch (error: any) {
       console.error("AI Code Generation Error:", error);
       toast({
         title: "AI Code Generation Error",
-        description: error.message || "Failed to generate code.",
+        description: error.message || "Failed to generate code. Check if local AI model is available.",
         variant: "destructive",
       });
       setAiOutput(`Error: ${error.message || 'Failed to generate code.'}`);
@@ -96,19 +99,18 @@ const Index = () => {
 
   const handleSaveProject = useCallback(async () => {
     try {
-      // Convert files array to the expected format for ProjectSaveState
       const filesMap: { [filename: string]: string } = {};
       files.forEach(file => {
         filesMap[file.name] = file.content;
       });
 
       const projectData: ProjectSaveState = {
-        version: 1, // Changed from string to number
+        version: 1,
         generatedCode: generatedCode,
         editorMode: editorMode,
-        files: filesMap, // Changed from files array to files map
-        activeFilename: files.find(f => f.id === activeFileId)?.name, // Changed from activeFileId to activeFilename
-        assets: [], // Added required assets field
+        files: filesMap,
+        activeFilename: files.find(f => f.id === activeFileId)?.name,
+        assets: [],
       };
       
       await saveProjectToFile(projectData);
@@ -124,13 +126,11 @@ const Index = () => {
 
   const handleExportProject = useCallback(async () => {
     try {
-      // Create a zip file containing all project files
       const zip = new (await import('jszip')).default();
       files.forEach(file => {
         zip.file(file.name, file.content);
       });
       
-      // Add index.html with necessary script tags
       const indexHtmlContent = `
         <!DOCTYPE html>
         <html>
@@ -146,10 +146,8 @@ const Index = () => {
       `;
       zip.file('index.html', indexHtmlContent);
       
-      // Generate the zip file as a blob
       const blob = await zip.generateAsync({ type: "blob" });
       
-      // Create a download link for the zip file
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -252,7 +250,7 @@ const Index = () => {
     <div className="flex flex-col h-screen bg-background">
       <Header onSaveProject={handleSaveProject} onExportProject={handleExportProject} />
       
-      {/* Compact Status Bar */}
+      {/* Enhanced Status Bar with AI Status */}
       <div className="flex items-center justify-between px-4 py-2 bg-secondary/30 border-b border-border text-sm">
         <div className="flex items-center gap-4">
           <ModeSelector currentMode={editorMode} onModeChange={setEditorMode} />
@@ -261,15 +259,21 @@ const Index = () => {
             <div className="flex items-center space-x-1 text-xs">
               <Cpu className="h-3 w-3 text-primary" />
               <span className={`font-medium ${isAvailable ? 'text-green-600' : 'text-orange-600'}`}>
-                {isAvailable ? `${modelName || 'Local AI'}` : 'Local AI Unavailable'}
+                {isLoading ? 'Loading AI...' : isAvailable ? `${modelName || 'Local AI'}` : 'Local AI Unavailable'}
               </span>
             </div>
           </div>
         </div>
         
-        {!isAvailable && (
+        {aiError && (
+          <div className="text-xs text-red-600">
+            AI Error: {aiError}
+          </div>
+        )}
+        
+        {!isAvailable && !isLoading && (
           <div className="text-xs text-orange-600">
-            Will use Gemini API fallback - Consider adding a local model
+            Using fallback responses - Consider adding a local model
           </div>
         )}
       </div>
@@ -280,10 +284,18 @@ const Index = () => {
           <ResizablePanel defaultSize={45} minSize={30}>
             <div className="flex flex-col h-full">
               <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-                <PromptInput onSubmit={handlePromptSubmit} isProcessing={isProcessing} />
+                <PromptInput 
+                  onSubmit={handlePromptSubmit} 
+                  isProcessing={isProcessing}
+                  disabled={isLoading}
+                />
                 
                 <div className="space-y-4">
-                  <AiOutput output={aiOutput} isLoading={isProcessing} />
+                  <AiOutput 
+                    output={aiOutput} 
+                    isLoading={isProcessing}
+                    mode={editorMode}
+                  />
                 </div>
               </div>
             </div>
@@ -348,7 +360,6 @@ const Index = () => {
                     ))}
                   </ul>
                   
-                  {/* Simple Code Editor */}
                   <div className="mt-4 flex-1">
                     <Textarea
                       value={files.find(file => file.id === activeFileId)?.content || ''}

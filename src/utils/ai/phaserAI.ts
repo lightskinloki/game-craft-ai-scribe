@@ -1,9 +1,65 @@
 
+import { useLocalAI } from '@/hooks/useLocalAI';
+
 export const generatePhaserCode = async (prompt: string): Promise<string> => {
-  // Placeholder for Phaser-specific AI code generation
-  // This will be implemented with local AI inference later
-  console.log('Generating Phaser code with prompt:', prompt);
-  
-  // For now, return a simple Phaser response
-  return `// Generated Phaser code for: ${prompt}\n// Basic Phaser game structure\nconst config = {\n  type: Phaser.AUTO,\n  width: 800,\n  height: 600,\n  scene: {\n    preload: preload,\n    create: create\n  }\n};\n\nfunction preload() {\n  // Load assets here\n}\n\nfunction create() {\n  // Create game objects here\n}\n\nconst game = new Phaser.Game(config);`;
+  try {
+    // Get the local AI hook instance
+    const { isAvailable, generateText } = useLocalAI();
+    
+    if (!isAvailable) {
+      throw new Error('Local AI model not available. Using fallback response.');
+    }
+
+    // Create a Phaser-specific prompt
+    const phaserPrompt = `You are a Phaser 3 game development expert. Generate clean, working Phaser 3 JavaScript code for the following request. Include proper Phaser structure and best practices. Only return code with brief comments:
+
+${prompt}`;
+
+    const generatedCode = await generateText(phaserPrompt, {
+      maxTokens: 400,
+      temperature: 0.4,
+      topP: 0.85
+    });
+
+    return generatedCode;
+  } catch (error) {
+    console.error('Phaser AI generation error:', error);
+    // Enhanced Phaser fallback with better structure
+    return `// Generated Phaser code for: ${prompt}
+// Note: Local AI model unavailable, using fallback
+
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 300 },
+      debug: false
+    }
+  },
+  scene: {
+    preload: preload,
+    create: create,
+    update: update
+  }
+};
+
+function preload() {
+  // Load assets for: ${prompt}
+  // this.load.image('key', 'path/to/image.png');
+}
+
+function create() {
+  // Create game objects for: ${prompt}
+  // Implement your game logic here
+}
+
+function update() {
+  // Game loop updates
+}
+
+const game = new Phaser.Game(config);`;
+  }
 };
