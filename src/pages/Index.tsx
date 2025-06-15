@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Code, Save, Download, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import Header from '@/components/Header';
 import PromptInput from '@/components/PromptInput';
 import AiOutput from '@/components/AiOutput';
 import ModeSelector from '@/components/ModeSelector';
+import CodeEditor from '@/components/CodeEditor';
 import { useLocation } from 'react-router-dom';
 
 const Index = () => {
@@ -26,7 +28,7 @@ const Index = () => {
   const [activeFileId, setActiveFileId] = useState<string>('main.js');
   const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
-  const previewFrameRef = useRef<HTMLIFrameElement>(null);
+  const previewFrameRef = useRef<HTMLIFrameReference>(null);
   const { toast } = useToast();
 
   const location = useLocation();
@@ -278,16 +280,16 @@ const Index = () => {
         )}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content with proper 3-column layout */}
       <div className="flex flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={45} minSize={30}>
+          {/* Left Panel - Prompt and AI Output */}
+          <ResizablePanel defaultSize={30} minSize={25}>
             <div className="flex flex-col h-full">
               <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                 <PromptInput 
                   onSubmit={handlePromptSubmit} 
                   isProcessing={isProcessing}
-                  disabled={isLoading}
                 />
                 
                 <div className="space-y-4">
@@ -303,73 +305,51 @@ const Index = () => {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={55} minSize={40}>
+          {/* Middle Panel - Code Editor */}
+          <ResizablePanel defaultSize={40} minSize={30}>
+            <div className="flex flex-col h-full">
+              {/* File Explorer */}
+              <div className="p-4 border-b">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium">Files</h3>
+                  <Button variant="outline" size="sm" onClick={handleAddFile}>Add File</Button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {files.map(file => (
+                    <button
+                      key={file.id}
+                      className={`px-2 py-1 text-xs rounded ${activeFileId === file.id ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'}`}
+                      onClick={() => handleFileSelect(file.id)}
+                    >
+                      {file.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Code Editor */}
+              <div className="flex-1">
+                <CodeEditor
+                  code={files.find(file => file.id === activeFileId)?.content || ''}
+                  isLoading={false}
+                  activeFilename={files.find(file => file.id === activeFileId)?.name}
+                  onCodeChange={handleEditorChange}
+                />
+              </div>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* Right Panel - Preview and Console */}
+          <ResizablePanel defaultSize={30} minSize={25}>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'files' | 'preview' | 'console')} className="flex flex-col h-full">
               <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="files" className="text-xs">Files</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="preview" className="text-xs">Preview</TabsTrigger>
                   <TabsTrigger value="console" className="text-xs">Console</TabsTrigger>
                 </TabsList>
               </div>
-
-              <TabsContent value="files" className="flex-1 mt-0 overflow-hidden">
-                <div className="p-4 h-full flex flex-col">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-medium">File Explorer</h3>
-                    <Button variant="outline" size="sm" onClick={handleAddFile}>Add File</Button>
-                  </div>
-                  <ul className="space-y-1 overflow-y-auto flex-1">
-                    {files.map(file => (
-                      <li
-                        key={file.id}
-                        className={`px-3 py-1.5 rounded-md text-sm cursor-pointer hover:bg-secondary ${activeFileId === file.id ? 'bg-secondary font-medium' : ''}`}
-                        onClick={() => handleFileSelect(file.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="truncate">{file.name}</span>
-                          <div className="space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const newName = prompt("Enter new file name:", file.name);
-                                if (newName) {
-                                  handleFileRename(file.id, newName);
-                                }
-                              }}
-                            >
-                              Rename
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (window.confirm("Are you sure you want to delete this file?")) {
-                                  handleFileDelete(file.id);
-                                }
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <div className="mt-4 flex-1">
-                    <Textarea
-                      value={files.find(file => file.id === activeFileId)?.content || ''}
-                      onChange={(e) => handleEditorChange(e.target.value)}
-                      className="h-full font-mono text-sm"
-                      placeholder="Start coding..."
-                    />
-                  </div>
-                </div>
-              </TabsContent>
 
               <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden">
                 <div className="flex flex-col h-full">
@@ -390,7 +370,7 @@ const Index = () => {
                   <div className="p-4">
                     <h3 className="text-sm font-medium">Console</h3>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-4 bg-secondary/50 text-xs">
+                  <div className="flex-1 overflow-y-auto p-4 bg-secondary/50 text-xs font-mono">
                     {consoleOutput.map((output, index) => (
                       <div key={index}>{output}</div>
                     ))}
