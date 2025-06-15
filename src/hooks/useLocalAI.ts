@@ -9,6 +9,14 @@ interface LocalAIState {
   modelType: 'gguf' | 'safetensors' | null;
   error: string | null;
   loadProgress: number;
+  recommendation: 'low' | 'mid' | 'high' | null;
+  canHotSwap: boolean;
+}
+
+interface ModelCompatibility {
+  compatible: boolean;
+  reason: string;
+  recommendation?: string;
 }
 
 export const useLocalAI = () => {
@@ -19,66 +27,120 @@ export const useLocalAI = () => {
     modelType: null,
     error: null,
     loadProgress: 0,
+    recommendation: null,
+    canHotSwap: false,
   });
   
   const [pipeline_, setPipeline] = useState<any>(null);
 
+  // Enhanced hardware detection for better recommendations
+  const detectHardware = useCallback(async () => {
+    const cores = navigator.hardwareConcurrency || 4;
+    const memory = 'deviceMemory' in navigator 
+      ? (navigator as any).deviceMemory * 1024 
+      : 8192;
+    const webGPU = 'gpu' in navigator;
+
+    let recommendation: 'low' | 'mid' | 'high' = 'low';
+    if (memory >= 32768 && cores >= 8) {
+      recommendation = 'high';
+    } else if (memory >= 16384 && cores >= 4) {
+      recommendation = 'mid';
+    }
+
+    return { cores, memory, webGPU, recommendation };
+  }, []);
+
   // Enhanced model scanning and initialization
   useEffect(() => {
     const initializeModel = async () => {
-      setState(prev => ({ ...prev, isLoading: true, error: null, loadProgress: 0 }));
+      setState(prev => ({ 
+        ...prev, 
+        isLoading: true, 
+        error: null, 
+        loadProgress: 0,
+        canHotSwap: false 
+      }));
       
       try {
-        // Comprehensive list of model files to scan for
+        // Detect hardware for better recommendations
+        const hardware = await detectHardware();
+        
+        setState(prev => ({ 
+          ...prev, 
+          recommendation: hardware.recommendation,
+          loadProgress: 10 
+        }));
+
+        // Enhanced model configurations with size estimates
         const modelConfigs = [
           // GGUF models (prioritized for better local performance)
-          { name: 'model.gguf', type: 'gguf' as const },
-          { name: 'chat-model.gguf', type: 'gguf' as const },
-          { name: 'llama.gguf', type: 'gguf' as const },
-          { name: 'phi.gguf', type: 'gguf' as const },
-          { name: 'gemma.gguf', type: 'gguf' as const },
-          { name: 'mistral.gguf', type: 'gguf' as const },
-          { name: 'qwen.gguf', type: 'gguf' as const },
+          { name: 'model.gguf', type: 'gguf' as const, size: 'unknown' },
+          { name: 'tinyllama-1.1b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.5B' },
+          { name: 'phi-3-mini-4k-instruct-q4.gguf', type: 'gguf' as const, size: '3.8B' },
+          { name: 'llama-2-7b-chat.q4_0.gguf', type: 'gguf' as const, size: '7B' },
+          { name: 'mistral-7b-instruct-v0.1.q4_0.gguf', type: 'gguf' as const, size: '7B' },
+          { name: 'qwen-1_8b-chat-q4_0.gguf', type: 'gguf' as const, size: '1.8B' },
           // SafeTensors models
-          { name: 'model.safetensors', type: 'safetensors' as const },
-          { name: 'chat-model.safetensors', type: 'safetensors' as const },
-          { name: 'llama.safetensors', type: 'safetensors' as const },
-          { name: 'phi.safetensors', type: 'safetensors' as const },
-          { name: 'gemma.safetensors', type: 'safetensors' as const },
-          { name: 'pytorch_model.safetensors', type: 'safetensors' as const },
-          { name: 'mistral.safetensors', type: 'safetensors' as const },
-          { name: 'qwen.safetensors', type: 'safetensors' as const },
+          { name: 'model.safetensors', type: 'safetensors' as const, size: 'unknown' },
+          { name: 'pytorch_model.safetensors', type: 'safetensors' as const, size: 'unknown' },
         ];
         
         let modelLoaded = false;
         let loadedModelName = '';
         let loadedModelType: 'gguf' | 'safetensors' | null = null;
         
+        setState(prev => ({ ...prev, loadProgress: 20 }));
+        
         for (const modelConfig of modelConfigs) {
           try {
             const modelPath = `/models/${modelConfig.name}`;
-            console.log(`Attempting to load local ${modelConfig.type.toUpperCase()} model: ${modelPath}`);
+            console.log(`Attempting to load ${modelConfig.type.toUpperCase()} model: ${modelPath} (${modelConfig.size})`);
             
-            setState(prev => ({ ...prev, loadProgress: 25 }));
+            setState(prev => ({ ...prev, loadProgress: 30 }));
             
-            // Try to load the model with optimized settings
-            const textGenerator = await pipeline('text-generation', modelPath, {
-              device: 'webgpu', // Primary: WebGPU for best performance
-              dtype: 'fp16', // Use half precision for better performance
-              progress_callback: (progress: any) => {
-                const progressPercent = Math.min(100, Math.max(25, progress.progress * 75 + 25));
-                setState(prev => ({ ...prev, loadProgress: progressPercent }));
+            // Enhanced loading with better device selection
+            const deviceOptions = [];
+            if (hardware.webGPU) deviceOptions.push('webgpu');
+            deviceOptions.push('wasm');
+            
+            let textGenerator = null;
+            
+            for (const device of deviceOptions) {
+              try {
+                console.log(`Trying device: ${device}`);
+                setState(prev => ({ ...prev, loadProgress: 40 }));
+                
+                textGenerator = await pipeline('text-generation', modelPath, {
+                  device: device,
+                  dtype: device === 'webgpu' ? 'fp16' : 'fp32',
+                  progress_callback: (progress: any) => {
+                    const progressPercent = Math.min(90, Math.max(40, progress.progress * 50 + 40));
+                    setState(prev => ({ ...prev, loadProgress: progressPercent }));
+                  }
+                });
+                
+                console.log(`Successfully loaded on ${device}`);
+                break;
+              } catch (deviceError) {
+                console.log(`Failed on ${device}:`, deviceError);
+                continue;
               }
-            });
+            }
+            
+            if (!textGenerator) {
+              throw new Error('Failed to load on any device');
+            }
             
             setPipeline(textGenerator);
             loadedModelName = modelConfig.name;
             loadedModelType = modelConfig.type;
             modelLoaded = true;
-            console.log(`Successfully loaded local ${modelConfig.type.toUpperCase()} model: ${modelConfig.name}`);
+            
+            console.log(`Successfully loaded ${modelConfig.type.toUpperCase()} model: ${modelConfig.name}`);
             break;
           } catch (error) {
-            console.log(`Model ${modelConfig.name} not found or failed to load:`, error);
+            console.log(`Model ${modelConfig.name} failed:`, error);
             continue;
           }
         }
@@ -90,7 +152,8 @@ export const useLocalAI = () => {
           modelName: loadedModelName || null,
           modelType: loadedModelType,
           loadProgress: modelLoaded ? 100 : 0,
-          error: modelLoaded ? null : 'No local models found. Please place GGUF or SafeTensors models in /public/models/',
+          canHotSwap: modelLoaded,
+          error: modelLoaded ? null : getDetailedError(hardware.recommendation),
         }));
         
       } catch (error) {
@@ -100,15 +163,27 @@ export const useLocalAI = () => {
           isLoading: false,
           isAvailable: false,
           loadProgress: 0,
-          error: error instanceof Error ? error.message : 'Failed to initialize local AI',
+          canHotSwap: false,
+          error: `Initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         }));
       }
     };
 
     initializeModel();
-  }, []);
+  }, [detectHardware]);
 
-  // Enhanced text generation with better configuration
+  // Helper function for detailed error messages
+  const getDetailedError = (recommendation: 'low' | 'mid' | 'high') => {
+    const recommendations = {
+      low: 'For your hardware, try: TinyLlama-1.1B (tinyllama-1.1b-chat-q4_0.gguf) or Qwen-1.8B (qwen-1_8b-chat-q4_0.gguf)',
+      mid: 'For your hardware, try: Phi-3-Mini (phi-3-mini-4k-instruct-q4.gguf) or Mistral-7B (mistral-7b-instruct-v0.1.q4_0.gguf)',
+      high: 'Your hardware can handle larger models. Try Llama-2-7B (llama-2-7b-chat.q4_0.gguf) or similar 7B+ models'
+    };
+    
+    return `No compatible models found. ${recommendations[recommendation]}. Place GGUF or SafeTensors models in /public/models/`;
+  };
+
+  // Enhanced text generation with better error handling
   const generateText = useCallback(async (prompt: string, options?: {
     maxTokens?: number;
     temperature?: number;
@@ -122,8 +197,10 @@ export const useLocalAI = () => {
       console.log('Generating text with local model...', {
         model: state.modelName,
         type: state.modelType,
-        prompt: prompt.substring(0, 100) + '...'
+        promptLength: prompt.length
       });
+      
+      const startTime = Date.now();
       
       const result = await pipeline_(prompt, {
         max_new_tokens: options?.maxTokens || 500,
@@ -131,10 +208,14 @@ export const useLocalAI = () => {
         top_p: options?.topP || 0.9,
         do_sample: true,
         repetition_penalty: 1.1,
-        pad_token_id: 50256, // Common pad token
+        pad_token_id: 50256,
+        eos_token_id: 2,
       });
       
-      // Extract generated text with better handling
+      const generationTime = Date.now() - startTime;
+      console.log(`Generation completed in ${generationTime}ms`);
+      
+      // Enhanced response processing
       let generatedText = '';
       if (Array.isArray(result)) {
         generatedText = result[0]?.generated_text || '';
@@ -146,37 +227,95 @@ export const useLocalAI = () => {
         throw new Error('No text generated by local model');
       }
       
-      // Clean up the response
+      // Clean up the response more intelligently
       let responseText = generatedText;
       if (responseText.startsWith(prompt)) {
         responseText = responseText.slice(prompt.length);
       }
       
       responseText = responseText.trim();
-      return responseText || generatedText;
+      
+      if (!responseText) {
+        throw new Error('Generated text is empty after cleanup');
+      }
+      
+      return responseText;
       
     } catch (error) {
       console.error('Local AI generation error:', error);
-      throw new Error(`Local AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown generation error';
+      throw new Error(`Local AI generation failed: ${errorMessage}`);
     }
   }, [pipeline_, state.isAvailable, state.modelName, state.modelType]);
 
-  // Function to check model compatibility
-  const checkModelCompatibility = useCallback(() => {
-    if (!state.isAvailable) return { compatible: false, reason: 'No model loaded' };
-    
-    // Basic compatibility checks
-    const supportedFormats = ['gguf', 'safetensors'];
-    if (!state.modelType || !supportedFormats.includes(state.modelType)) {
-      return { compatible: false, reason: 'Unsupported model format' };
+  // Enhanced model compatibility checking
+  const checkModelCompatibility = useCallback((): ModelCompatibility => {
+    if (!state.isAvailable) {
+      return { 
+        compatible: false, 
+        reason: 'No model loaded',
+        recommendation: state.error || 'Place a compatible model in /public/models/'
+      };
     }
     
-    return { compatible: true, reason: 'Model is compatible' };
-  }, [state.isAvailable, state.modelType]);
+    const supportedFormats = ['gguf', 'safetensors'];
+    if (!state.modelType || !supportedFormats.includes(state.modelType)) {
+      return { 
+        compatible: false, 
+        reason: 'Unsupported model format',
+        recommendation: 'Use GGUF or SafeTensors format models'
+      };
+    }
+    
+    return { 
+      compatible: true, 
+      reason: `${state.modelType.toUpperCase()} model is fully compatible` 
+    };
+  }, [state.isAvailable, state.modelType, state.error]);
+
+  // Hot-swap model functionality
+  const swapModel = useCallback(async (modelName: string) => {
+    if (!state.canHotSwap) {
+      throw new Error('Hot-swapping not available');
+    }
+    
+    setState(prev => ({ ...prev, isLoading: true, loadProgress: 0 }));
+    
+    try {
+      const modelPath = `/models/${modelName}`;
+      const newPipeline = await pipeline('text-generation', modelPath, {
+        device: 'webgpu',
+        dtype: 'fp16',
+        progress_callback: (progress: any) => {
+          const progressPercent = Math.min(100, progress.progress * 100);
+          setState(prev => ({ ...prev, loadProgress: progressPercent }));
+        }
+      });
+      
+      setPipeline(newPipeline);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        modelName: modelName,
+        loadProgress: 100,
+        error: null
+      }));
+      
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        loadProgress: 0,
+        error: `Failed to swap to ${modelName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }));
+      throw error;
+    }
+  }, [state.canHotSwap]);
 
   return {
     ...state,
     generateText,
     checkModelCompatibility,
+    swapModel,
   };
 };
