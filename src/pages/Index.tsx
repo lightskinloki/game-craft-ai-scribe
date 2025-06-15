@@ -1,10 +1,10 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Code, Save, Download, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Editor from "@monaco-editor/react";
 import { useToast } from "@/components/ui/use-toast";
 import { saveProjectToFile, loadProjectFromFile } from "@/utils/fileHandling";
 import { ProjectSaveState } from "@/types/project";
@@ -26,7 +26,6 @@ const Index = () => {
   const [activeFileId, setActiveFileId] = useState<string>('main.js');
   const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
-  const editorRef = useRef<any>(null);
   const previewFrameRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
 
@@ -174,7 +173,7 @@ const Index = () => {
     const newFileId = uuidv4();
     const newFileName = `new_file_${files.length + 1}.js`;
     setFiles(prevFiles => [...prevFiles, { id: newFileId, name: newFileName, content: '' }]);
-    setActiveFileId(newFileId); // Automatically switch to the new file
+    setActiveFileId(newFileId);
   }, [files.length]);
 
   const handleFileRename = useCallback((fileId: string, newName: string) => {
@@ -196,7 +195,6 @@ const Index = () => {
     setFiles(prevFiles => {
       const updatedFiles = prevFiles.filter(file => file.id !== fileId);
       
-      // If the active file is being deleted, switch to the first available file
       if (activeFileId === fileId) {
         setActiveFileId(updatedFiles[0].id);
       }
@@ -232,10 +230,8 @@ const Index = () => {
       return;
     }
 
-    // Clear existing console output
     setConsoleOutput([]);
 
-    // Override console.log to capture output
     frameWindow.console.log = (...args: any[]) => {
       setConsoleOutput(prevOutput => [...prevOutput, args.join(' ')]);
     };
@@ -248,42 +244,9 @@ const Index = () => {
     }
   }, [activeFileId, files]);
 
-  // Simplified header without project management
-  const renderSimplifiedHeader = () => (
-    <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-secondary/50">
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2">
-          <Code className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold tracking-tight">GameCraft AI</h1>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5 h-8 px-3 text-xs"
-          onClick={handleSaveProject}
-        >
-          <Save className="h-3 w-3" />
-          Save
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1.5 h-8 px-3 text-xs"
-          onClick={handleExportProject}
-        >
-          <Download className="h-3 w-3" />
-          Export
-        </Button>
-      </div>
-    </header>
-  );
-
   return (
     <div className="flex flex-col h-screen bg-background">
-      {renderSimplifiedHeader()}
+      <Header onSaveProject={handleSaveProject} onExportProject={handleExportProject} />
       
       {/* Compact Status Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-secondary/30 border-b border-border text-sm">
@@ -316,7 +279,7 @@ const Index = () => {
                 <PromptInput onSubmit={handlePromptSubmit} isProcessing={isProcessing} />
                 
                 <div className="space-y-4">
-                  <AiOutput content={aiOutput} isLoading={isProcessing} />
+                  <AiOutput output={aiOutput} isLoading={isProcessing} />
                 </div>
               </div>
             </div>
@@ -325,7 +288,7 @@ const Index = () => {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={55} minSize={40}>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'files' | 'preview' | 'console')} className="flex flex-col h-full">
               <div className="flex items-center justify-between px-4 pt-3 pb-1">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="files" className="text-xs">Files</TabsTrigger>
@@ -338,7 +301,7 @@ const Index = () => {
                 <div className="p-4 h-full flex flex-col">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-sm font-medium">File Explorer</h3>
-                    <Button variant="outline" size="xs" onClick={handleAddFile}>Add File</Button>
+                    <Button variant="outline" size="sm" onClick={handleAddFile}>Add File</Button>
                   </div>
                   <ul className="space-y-1 overflow-y-auto flex-1">
                     {files.map(file => (
@@ -352,9 +315,9 @@ const Index = () => {
                           <div className="space-x-2">
                             <Button
                               variant="ghost"
-                              size="xs"
+                              size="sm"
                               onClick={(e) => {
-                                e.stopPropagation(); // Prevent file select
+                                e.stopPropagation();
                                 const newName = prompt("Enter new file name:", file.name);
                                 if (newName) {
                                   handleFileRename(file.id, newName);
@@ -365,9 +328,9 @@ const Index = () => {
                             </Button>
                             <Button
                               variant="ghost"
-                              size="xs"
+                              size="sm"
                               onClick={(e) => {
-                                e.stopPropagation(); // Prevent file select
+                                e.stopPropagation();
                                 if (window.confirm("Are you sure you want to delete this file?")) {
                                   handleFileDelete(file.id);
                                 }
@@ -380,6 +343,16 @@ const Index = () => {
                       </li>
                     ))}
                   </ul>
+                  
+                  {/* Simple Code Editor */}
+                  <div className="mt-4 flex-1">
+                    <Textarea
+                      value={files.find(file => file.id === activeFileId)?.content || ''}
+                      onChange={(e) => handleEditorChange(e.target.value)}
+                      className="h-full font-mono text-sm"
+                      placeholder="Start coding..."
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
