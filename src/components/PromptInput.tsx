@@ -8,10 +8,9 @@ import { useToast } from '@/components/ui/use-toast';
 interface PromptInputProps {
   onSubmit: (prompt: string) => void;
   isProcessing: boolean;
-  disabled?: boolean; // Added 'disabled' prop
 }
 
-const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing, disabled }) => {
+const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing }) => {
   const [prompt, setPrompt] = useState('');
   const { toast } = useToast();
 
@@ -43,7 +42,7 @@ const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing, disab
         onKeyDown={handleKeyDown}
         placeholder="Enter your game development prompt here (e.g., 'Create a simple 2D platformer player controller script')"
         className="min-h-[140px] bg-secondary/50 border-secondary resize-none focus:border-primary"
-        disabled={isProcessing || disabled}
+        disabled={isProcessing}
       />
       <div className="flex justify-between items-center">
         <p className="text-xs text-muted-foreground">
@@ -52,7 +51,7 @@ const PromptInput: React.FC<PromptInputProps> = ({ onSubmit, isProcessing, disab
         <Button 
           id="submitPrompt" 
           onClick={handleSubmit} 
-          disabled={isProcessing || disabled}
+          disabled={isProcessing}
           className="gap-2"
         >
           {isProcessing ? 'Processing...' : 'Generate Code'}
