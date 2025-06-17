@@ -7,92 +7,104 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import ReadOnlyCodeSnippet from './ReadOnlyCodeSnippet';
 import ChangeApplicationDialog from './ChangeApplicationDialog';
+import LoadingState from './LoadingState';
 import { parseAIResponse, ParsedChanges, FileChange } from '@/utils/codeChangeParser';
 import { fileUpdateEngine } from '@/utils/fileUpdateEngine';
 import { useToast } from '@/components/ui/use-toast';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 interface AiOutputProps {
   explanation: string;
   isLoading: boolean;
   currentFiles?: { [filename: string]: string };
   onFilesChange?: (files: { [filename: string]: string }) => void;
+  error?: string | null;
 }
 
 const AiOutput: React.FC<AiOutputProps> = ({ 
   explanation, 
   isLoading, 
   currentFiles = {},
-  onFilesChange 
+  onFilesChange,
+  error 
 }) => {
   const [parsedChanges, setParsedChanges] = useState<ParsedChanges | null>(null);
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
 
   // Parse AI response for code changes
   useEffect(() => {
-    if (explanation && !isLoading) {
-      const changes = parseAIResponse(explanation);
-      setParsedChanges(changes);
+    if (explanation && !isLoading && !error) {
+      try {
+        const changes = parseAIResponse(explanation);
+        setParsedChanges(changes);
+      } catch (parseError) {
+        handleError(parseError as Error, { context: 'ai_response_parsing' });
+        setParsedChanges(null);
+      }
     } else {
       setParsedChanges(null);
     }
-  }, [explanation, isLoading]);
+  }, [explanation, isLoading, error, handleError]);
 
   const handleApplyChanges = async (selectedChanges: FileChange[]) => {
     if (!onFilesChange) {
-      toast({
-        title: "Cannot Apply Changes",
-        description: "File update functionality not available in current context",
-        variant: "destructive",
-      });
+      const errorMsg = "File update functionality not available in current context";
+      handleError(errorMsg, { context: 'file_changes_application' });
       return;
     }
 
-    const results = [];
-    
-    for (const change of selectedChanges) {
-      const result = await fileUpdateEngine.applyFileChange(
-        change.filename,
-        change.newCode,
-        currentFiles,
-        onFilesChange
-      );
-      results.push(result);
-    }
+    try {
+      const results = [];
+      
+      for (const change of selectedChanges) {
+        const result = await fileUpdateEngine.applyFileChange(
+          change.filename,
+          change.newCode,
+          currentFiles,
+          onFilesChange
+        );
+        results.push(result);
+      }
 
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
 
-    if (successful > 0) {
-      toast({
-        title: "Changes Applied",
-        description: `Successfully applied ${successful} change${successful !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}`,
-      });
-    }
+      if (successful > 0) {
+        toast({
+          title: "Changes Applied",
+          description: `Successfully applied ${successful} change${successful !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}`,
+        });
+      }
 
-    if (failed > 0) {
-      toast({
-        title: "Some Changes Failed",
-        description: `${failed} change${failed !== 1 ? 's' : ''} could not be applied. Check console for details.`,
-        variant: "destructive",
-      });
+      if (failed > 0) {
+        const failedResults = results.filter(r => !r.success);
+        handleError('Some changes failed to apply', { 
+          context: 'partial_change_failure',
+          failedChanges: failedResults 
+        });
+      }
+    } catch (applyError) {
+      handleError(applyError as Error, { context: 'changes_application' });
     }
   };
 
   console.log('AiOutput rendering with explanation:', explanation);
   console.log('isLoading:', isLoading);
+  console.log('error:', error);
   console.log('parsedChanges:', parsedChanges);
 
-  if (isLoading) {
+  // Show loading state with error handling
+  if (isLoading || error) {
     return (
-      <div className="p-4 h-full">
-        <div className="animate-pulse flex flex-col space-y-4">
-          <div className="h-4 bg-secondary rounded w-3/4"></div>
-          <div className="h-4 bg-secondary rounded w-1/2"></div>
-          <div className="h-4 bg-secondary rounded w-5/6"></div>
-          <div className="h-4 bg-secondary rounded w-2/3"></div>
-        </div>
-      </div>
+      <LoadingState
+        isLoading={isLoading}
+        error={error}
+        title="Generating AI Response"
+        description="Please wait while the AI processes your request..."
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
