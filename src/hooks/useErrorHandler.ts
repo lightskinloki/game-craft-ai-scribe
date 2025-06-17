@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 
 export interface AppError {
   id: string;
@@ -39,6 +40,29 @@ export const useErrorHandler = () => {
     context
   }), []);
 
+  const retryLastOperation = useCallback(async () => {
+    setState(prev => ({ ...prev, isRecovering: true }));
+    
+    try {
+      // This would be implemented based on the specific operation
+      // For now, just clear the error after a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setState(prev => ({
+        errors: prev.errors.slice(0, -1), // Remove last error
+        isRecovering: false
+      }));
+      
+      toast({
+        title: 'Recovery Successful',
+        description: 'The operation has been retried successfully.',
+      });
+    } catch (retryError) {
+      setState(prev => ({ ...prev, isRecovering: false }));
+      handleError(retryError as Error, { context: 'retry_operation' });
+    }
+  }, [toast]);
+
   const handleError = useCallback((error: Error | AppError | string, context?: Record<string, any>) => {
     let appError: AppError;
 
@@ -74,7 +98,7 @@ export const useErrorHandler = () => {
 
     console.error('Error handled:', appError);
     return appError;
-  }, [createError, toast]);
+  }, [createError, toast, retryLastOperation]);
 
   const getToastConfig = (error: AppError) => {
     const baseConfig = {
@@ -88,10 +112,13 @@ export const useErrorHandler = () => {
           ...baseConfig,
           title: 'AI Model Error',
           description: error.message,
-          action: error.recoverable ? { 
-            altText: 'Retry', 
-            onClick: () => retryLastOperation() 
-          } : undefined
+          ...(error.recoverable && {
+            action: (
+              <ToastAction altText="Retry" onClick={() => retryLastOperation()}>
+                Retry
+              </ToastAction>
+            )
+          })
         };
       case 'network':
         return {
@@ -120,29 +147,6 @@ export const useErrorHandler = () => {
         };
     }
   };
-
-  const retryLastOperation = useCallback(async () => {
-    setState(prev => ({ ...prev, isRecovering: true }));
-    
-    try {
-      // This would be implemented based on the specific operation
-      // For now, just clear the error after a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setState(prev => ({
-        errors: prev.errors.slice(0, -1), // Remove last error
-        isRecovering: false
-      }));
-      
-      toast({
-        title: 'Recovery Successful',
-        description: 'The operation has been retried successfully.',
-      });
-    } catch (retryError) {
-      setState(prev => ({ ...prev, isRecovering: false }));
-      handleError(retryError as Error, { context: 'retry_operation' });
-    }
-  }, [handleError, toast]);
 
   const clearError = useCallback((errorId: string) => {
     setState(prev => ({
